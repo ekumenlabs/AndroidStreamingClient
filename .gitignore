@@ -1,0 +1,23 @@
+.classpath
+.gradle
+.project
+.settings
+bin
+build
+build.xml
+gen
+local.properties
+proguard-project.txt
+drone_main/src/main/obj
+
+# These are Android Studio files, might be worth including these later.
+.idea
+*.iml
+build.log
+build-log.xml
+docs.iml
+.*.swp
+*.apk
+
+# Developer-specific system configuration defaults
+custom_defaults.ini
