@@ -22,9 +22,9 @@ import java.util.Arrays;
 /**
  * Created by ashi on 1/3/15.
  */
-public class AlgronDecoder implements Decoder, SurfaceHolder.Callback {
+public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
-    private static Log log = LogFactory.getLog(AlgronDecoder.class);
+    private static Log log = LogFactory.getLog(RtpMediaDecoder.class);
     private final SurfaceView surfaceView;
 
     private PlayerThread playerThread;
@@ -35,7 +35,7 @@ public class AlgronDecoder implements Decoder, SurfaceHolder.Callback {
     private MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
     private MediaCodec decoder;
 
-    public AlgronDecoder(SurfaceView surfaceView) {
+    public RtpMediaDecoder(SurfaceView surfaceView) {
         this.surfaceView = surfaceView;
         surfaceView.getHolder().addCallback(this);
     }
