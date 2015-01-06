@@ -30,7 +30,6 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     private PlayerThread playerThread;
     private RtpMediaExtractor rtpMediaExtractor;
     private RTPClientThread rtpSessionThread;
-    private long currentTimestap = 0;
     private ByteBuffer[] inputBuffers;
     private ByteBuffer[] outputBuffers;
     private MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
@@ -68,14 +67,13 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     }
 
     @Override
-    public void decodeFrame(byte[] frameBytes) {
+    public void decodeFrame(byte[] frameBytes, long currentTimestap) {
         int inIndex = decoder.dequeueInputBuffer(0);
         if (inIndex >= 0) {
             ByteBuffer buffer = inputBuffers[inIndex];
 
             int sampleSize = readSampleData(buffer, frameBytes);
             decoder.queueInputBuffer(inIndex, 0, sampleSize, currentTimestap, 0);
-            currentTimestap += 100000 / 30;
         }
 
         int outIndex = decoder.dequeueOutputBuffer(info, 10000);
@@ -195,7 +193,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             // NOTE: This parameter seems to affect the performance a lot.
             // The default value of 1500 drops many more packets than
             // the experimental value of 15000 (and later increased to 30000)
-            session.setReceiveBufferSize(15000);
+            session.setReceiveBufferSize(50000);
 
             session.init();
             log.info("RTP Session created");

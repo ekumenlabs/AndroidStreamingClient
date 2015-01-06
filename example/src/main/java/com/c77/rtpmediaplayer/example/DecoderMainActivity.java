@@ -6,7 +6,6 @@ import android.view.SurfaceView;
 
 import com.c77.rtpmediaplayer.lib.RtpMediaDecoder;
 
-
 public class DecoderMainActivity extends Activity {
 
     private SurfaceView surfaceView;

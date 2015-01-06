@@ -40,7 +40,9 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
     private final Decoder decoder;
 
     // 27400 comes from the max-input-size parameter dumped in a debug run of the media_codec app
-    private ByteBuffer currentFrameBuffer = ByteBuffer.allocate(27400);
+    // Nevertheless, in some cases I see FU-A packets coming with a bigger size, which causes overflows
+    // Running with a very big buffer, I see sizes of up to 38000 being received
+    private ByteBuffer currentFrameBuffer = ByteBuffer.allocate(50000);
     private long currentFrameTimestamp = 0;
     private int currentFrameBufferSize = 0;
     private boolean currentFrameHasError = false;
@@ -213,12 +215,12 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
         currentFrameBuffer.flip();
         currentFrameBuffer.get(frame);
 
-        decodeFrame(frame);
+        decodeFrame(frame, currentFrameTimestamp);
 
         currentFrameBufferSize = 0;
     }
 
-    private void decodeFrame(byte[] frame) {
+    private void decodeFrame(byte[] frame, long timestamp) {
         // Send frame down to decoder avoiding the STAP-A onces
         if (frameNalType == NalType.STAPA) {
             if (sps == null) {
@@ -228,7 +230,7 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
             }
         }
 
-        decoder.decodeFrame(frame);
+        decoder.decodeFrame(frame, timestamp);
         decoder.printFrame(frame);
 
     }
