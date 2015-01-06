@@ -4,14 +4,13 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.SurfaceView;
 
-import com.c77.rtpmediaplayer.example.R;
-import com.c77.rtpmediaplayer.lib.AlgronDecoder;
+import com.c77.rtpmediaplayer.lib.RtpMediaDecoder;
 
 
 public class DecoderMainActivity extends Activity {
 
     private SurfaceView surfaceView;
-    private AlgronDecoder algronDecoder;
+    private RtpMediaDecoder rtpMediaDecoder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,13 +19,13 @@ public class DecoderMainActivity extends Activity {
 
         surfaceView = new SurfaceView(this);
         setContentView(surfaceView);
-        algronDecoder = new AlgronDecoder(surfaceView);
-        algronDecoder.start();
+        rtpMediaDecoder = new RtpMediaDecoder(surfaceView);
+        rtpMediaDecoder.start();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        algronDecoder.release();
+        rtpMediaDecoder.release();
     }
 }
