@@ -254,24 +254,32 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
 
         MediaFormat format = MediaFormat.createVideoFormat(mimeType, width, height);
         /*
-        the one got from internet
+        // the one got from internet
         byte[] header_sps = { 0, 0, 0, 1, // header
                 0x67, 0x42, 0x00, 0x1f, (byte)0xe9, 0x01, 0x68, 0x7b, (byte) 0x20 }; // sps
         byte[] header_pps = { 0, 0, 0, 1, // header
                 0x68, (byte)0xce, 0x06, (byte)0xf2 }; // pps
 
-        the one got from libstreaming at HQ
+        // the one got from libstreaming at HQ
         byte[] header_sps = { 0, 0, 0, 1, // header
                 0x67, 0x42, (byte)0x80, 0x14, (byte)0xe4, 0x40, (byte)0xa0, (byte)0xfd, 0x00, (byte)0xda, 0x14, 0x26, (byte)0xa0}; // sps
         byte[] header_pps = { 0, 0, 0, 1, // header
                 0x68, (byte)0xce, 0x38, (byte)0x80 }; // pps
-        */
+
 
         // the one got from libstreaming at home
         byte[] header_sps = { 0, 0, 0, 1, // header
                 0x67, 0x42, (byte) 0xc0, 0x1e, (byte) 0xe9, 0x01, 0x40, 0x7b, 0x40, 0x3c, 0x22, 0x11, (byte) 0xa8}; // sps
         byte[] header_pps = { 0, 0, 0, 1, // header
                 0x68, (byte) 0xce, 0x06, (byte) 0xe2}; // pps
+         */
+
+        // from avconv, when streaming sample.h264.mp4 from disk
+        byte[] header_sps = { 0, 0, 0, 1, // header
+                0x67, 0x64, (byte) 0x00, 0x1e, (byte) 0xac, (byte) 0xd9, 0x40, (byte) 0xa0, 0x3d,
+                (byte) 0xa1, 0x00, 0x00, (byte) 0x03, 0x00, 0x01, 0x00, 0x00, 0x03, 0x00, 0x3C, 0x0F, 0x16, 0x2D, (byte) 0x96 }; // sps
+        byte[] header_pps = { 0, 0, 0, 1, // header
+                0x68, (byte) 0xeb, (byte) 0xec, (byte) 0xb2, 0x2C }; // pps
 
 
         format.setByteBuffer("csd-0", ByteBuffer.wrap(header_sps));

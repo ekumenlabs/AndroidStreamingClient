@@ -178,15 +178,27 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
             session.addDataListener(rtpMediaExtractor);
 
-            log.info("RTP Session created");
             session.setDiscardOutOfOrder(false);
+
+            // This parameter changes the underlying I/O mechamism used by Netty
+            // It is counter-intuitive: 'false' will force the usage of NioDatagramChannelFactory
+            // vs. the default (true) which uses OioDatagramChannelFactory
+            // It is unclear which produces better results. This value
+            // (false, to make NioDatagramChannelFactory used) resolves the memory management usage
+            // reported in https://github.com/creativa77/RtpMediaPlayer/issues/4
+            // It may make sense that this works better for us since efflux is not used in Android normally
+            // NOTE: Despite fixing the memory usage, it is still pending to test which method produces
+            // best overall results
+            //
+            session.setUseNio(false);
+
             // NOTE: This parameter seems to affect the performance a lot.
             // The default value of 1500 drops many more packets than
             // the experimental value of 15000 (and later increased to 30000)
-            session.setReceiveBufferSize(30000);
+            session.setReceiveBufferSize(15000);
 
             session.init();
-            log.info("session init");
+            log.info("RTP Session created");
 
             try {
                 while (true) {
@@ -198,5 +210,4 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             session.terminate();
         }
     }
-
 }
