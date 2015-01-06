@@ -67,15 +67,24 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     }
 
     @Override
-    public void decodeFrame(byte[] frameBytes, long currentTimestap) {
+    public BufferedSample getSampleBuffer() throws RtpPlayerException {
         int inIndex = decoder.dequeueInputBuffer(0);
-        if (inIndex >= 0) {
-            ByteBuffer buffer = inputBuffers[inIndex];
-
-            int sampleSize = readSampleData(buffer, frameBytes);
-            decoder.queueInputBuffer(inIndex, 0, sampleSize, currentTimestap, 0);
+        if (inIndex < 0) {
+            throw new RtpPlayerException("Didn't get a buffer from the MediaCodec");
         }
+        return new BufferedSample(inputBuffers[inIndex], inIndex);
+    }
 
+    @Override
+    public void decodeFrame(BufferedSample decodeBuffer) {
+        // Dump buffer to logcat
+        log.info(decodeBuffer.toString());
+
+        // Queue the sample to be decoded
+        decoder.queueInputBuffer(decodeBuffer.getIndex(), 0,
+                decodeBuffer.getSampleSize(), decodeBuffer.getSampleTimestamp(), 0);
+
+        // Read the decoded output
         int outIndex = decoder.dequeueOutputBuffer(info, 10000);
         switch (outIndex) {
             case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
@@ -101,14 +110,6 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             log.info("OutputBuffer BUFFER_FLAG_END_OF_STREAM");
         }
     }
-
-    @Override
-    public void printFrame(byte[] frame) {
-        String debugging = "Size = " + frame.length;
-        debugging += " [" + new String(Hex.encodeHex(Arrays.copyOf(frame, 16))) + "]";
-        log.info(debugging);
-    }
-
 
     public void start() {
         rtpStartClient();
@@ -163,10 +164,6 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     private class RTPClientThread extends Thread {
         private AbstractRtpSession session;
-
-        public AbstractRtpSession getSession() {
-            return session;
-        }
 
         @Override
         public void run() {

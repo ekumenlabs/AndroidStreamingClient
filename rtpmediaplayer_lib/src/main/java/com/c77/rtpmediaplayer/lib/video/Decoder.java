@@ -1,10 +1,17 @@
 package com.c77.rtpmediaplayer.lib.video;
 
+import com.c77.rtpmediaplayer.lib.BufferedSample;
+import com.c77.rtpmediaplayer.lib.RtpPlayerException;
+
+import java.nio.ByteBuffer;
+
 /**
  * Created by julian on 12/15/14.
  */
 public interface Decoder {
-    public void decodeFrame(byte[] frameBytes, long timestamp);
+    // Retrieves a buffer from the decoder
+    public BufferedSample getSampleBuffer() throws RtpPlayerException;
 
-    void printFrame(byte[] frame);
+    // Returns a new frame to be decoded
+    public void decodeFrame(BufferedSample frame);
 }

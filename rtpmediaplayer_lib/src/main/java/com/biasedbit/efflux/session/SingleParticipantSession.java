@@ -201,9 +201,9 @@ public class SingleParticipantSession extends AbstractRtpSession {
         if (!this.receivedPackets.getAndSet(true)) {
             // If this is the first packet then setup the SSRC for this participant (we didn't know it yet).
             this.receiver.getInfo().setSsrc(packet.getSsrc());
-            LOG.trace("First packet received from remote source, updated SSRC to {}.", packet.getSsrc());
+            LOG.warn("First packet received from remote source, updated SSRC to {}.", packet.getSsrc());
         } else if (this.ignoreFromUnknownSsrc && (packet.getSsrc() != this.receiver.getInfo().getSsrc())) {
-            LOG.trace("Discarded packet from unexpected SSRC: {} (expected was {}).",
+            LOG.warn("Discarded packet from unexpected SSRC: {} (expected was {}).",
                       packet.getSsrc(), this.receiver.getInfo().getSsrc());
             return;
         }
