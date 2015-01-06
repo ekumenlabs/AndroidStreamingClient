@@ -7,7 +7,6 @@ import android.view.SurfaceView;
 import com.c77.rtpmediaplayer.example.R;
 import com.c77.rtpmediaplayer.lib.AlgronDecoder;
 
-
 public class DecoderMainActivity extends Activity {
 
     private SurfaceView surfaceView;

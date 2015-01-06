@@ -13,7 +13,7 @@ public class DumpDecoder implements Decoder {
     private static final String TAG = DumpDecoder.class.getName();
 
     @Override
-    public void decodeFrame(byte[] frameBytes) {
+    public void decodeFrame(byte[] frameBytes, long timestamp) {
         String debugging = "Size = " + frameBytes.length;
         debugging += " [" + new String(Hex.encodeHex(Arrays.copyOf(frameBytes, 16))) + "]";
         Log.i(TAG, debugging);
