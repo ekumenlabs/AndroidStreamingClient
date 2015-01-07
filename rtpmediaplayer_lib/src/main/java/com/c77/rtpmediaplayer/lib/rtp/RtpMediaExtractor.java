@@ -7,6 +7,8 @@ import com.biasedbit.efflux.packet.DataPacket;
 import com.biasedbit.efflux.participant.RtpParticipantInfo;
 import com.biasedbit.efflux.session.RtpSession;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
+import com.c77.rtpmediaplayer.lib.BufferedSample;
+import com.c77.rtpmediaplayer.lib.RtpPlayerException;
 import com.c77.rtpmediaplayer.lib.video.Decoder;
 
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -34,19 +36,14 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
 
     private final byte[] byteStreamStartCodePrefix = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01};
 
+    private final Decoder decoder;
+
     private int lastSequenceNumber = 0;
     private boolean lastSequenceNumberIsValid = false;
     private boolean sequenceError = false;
-    private final Decoder decoder;
 
-    // 27400 comes from the max-input-size parameter dumped in a debug run of the media_codec app
-    // Nevertheless, in some cases I see FU-A packets coming with a bigger size, which causes overflows
-    // Running with a very big buffer, I see sizes of up to 38000 being received
-    private ByteBuffer currentFrameBuffer = ByteBuffer.allocate(50000);
-    private long currentFrameTimestamp = 0;
-    private int currentFrameBufferSize = 0;
     private boolean currentFrameHasError = false;
-    private byte[] currentFrame;
+    private BufferedSample currentFrame;
 
     public RtpMediaExtractor(Decoder decoder) {
         this.decoder = decoder;
@@ -80,13 +77,13 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
             frameNalType = NalType.FULL;
 
             // Send the buffer upstream for processing
-            currentFrameBuffer.clear();
+
+            startFrame(packet.getTimestamp());
             if (useByteStreamFormat) {
-                currentFrameBuffer.put(byteStreamStartCodePrefix);
+                currentFrame.getBuffer().put(byteStreamStartCodePrefix);
             }
-            currentFrameBuffer.put(packet.getDataAsArray());
-            currentFrameBufferSize = currentFrameBuffer.position();
-            sendCurrentFrame();
+            currentFrame.getBuffer().put(packet.getData().toByteBuffer());
+            sendFrame();
 
             // It's a FU-A unit, we should aggregate packets until done
         } else if (nalType == 28) {
@@ -103,11 +100,12 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
             // Do we have a clean start of a frame?
             if (fuStart) {
                 Log.i(TAG, "FU-A start found. Starting new frame");
-                initFrame(packet.getTimestamp());
 
+                startFrame(packet.getTimestamp());
+
+                // Add stream header
                 if (useByteStreamFormat) {
-                    currentFrameBuffer.put(byteStreamStartCodePrefix);
-                    currentFrameBufferSize += 4;
+                    currentFrame.getBuffer().put(byteStreamStartCodePrefix);
                 }
 
                 // Re-create the H.264 NAL header from the FU-A header
@@ -119,34 +117,38 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
                    indicator octet of the fragmentation unit and in the type field of
                    the FU header"  */
                 byte reconstructedNalTypeOctet = (byte) (fuNalType | nalFBits | nalNriBits);
-                currentFrameBuffer.put(reconstructedNalTypeOctet);
-                currentFrameBufferSize++;
+                currentFrame.getBuffer().put(reconstructedNalTypeOctet);
             }
 
-            // Did we miss packets in the middle of a frame transition?
-            // In that case, I don't think there's much we can do other than flush our buffer
-            // and discard everything until the next buffer
-            if (packet.getTimestamp() != currentFrameTimestamp) {
-                Log.w(TAG, "Non-consecutive timestamp found");
-                currentFrameHasError = true;
-            }
-            if (sequenceError) {
-                Log.w(TAG, "Sequence error detected, dropping frame");
-                currentFrameHasError = true;
-            }
+            // if we don't have a buffer here, it means that we skipped the start packet for this
+            // NAL unit, so we can't do anything other than discard everything else
+            if(currentFrame != null) {
 
-            // If we survived possible errors, collect data to the current frame buffer
-            if (!currentFrameHasError) {
-                currentFrameBuffer.put(packet.getDataAsArray(), 2, packet.getDataSize() - 2);
-                currentFrameBufferSize += (packet.getDataSize() - 2);
-            }
+                // Did we miss packets in the middle of a frame transition?
+                // In that case, I don't think there's much we can do other than flush our buffer
+                // and discard everything until the next buffer
+                if (packet.getTimestamp() != currentFrame.getSampleTimestamp()) {
+                    Log.w(TAG, "Non-consecutive timestamp found");
+                    currentFrameHasError = true;
+                }
+                if (sequenceError) {
+                    currentFrameHasError = true;
+                }
 
-            if (fuEnd) {
-                Log.i(TAG, "FU-A end found. Sending frame!");
-                try {
-                    sendCurrentFrame();
-                } catch (Throwable t) {
-                    Log.e(TAG, "Error sending frame.", t);
+                // If we survived possible errors, collect data to the current frame buffer
+                if (!currentFrameHasError) {
+                    currentFrame.getBuffer().put(packet.getData().toByteBuffer(2, packet.getDataSize() - 2));
+                } else {
+                    Log.w(TAG, "Dropping frame");
+                }
+
+                if (fuEnd) {
+                    Log.i(TAG, "FU-A end found. Sending frame!");
+                    try {
+                        sendFrame();
+                    } catch (Throwable t) {
+                        Log.e(TAG, "Error sending frame.", t);
+                    }
                 }
             }
 
@@ -173,13 +175,12 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
                 buffer.readBytes(nalUnitData);
 
                 // Create and send the buffer upstream for processing
-                currentFrameBuffer.clear();
+                startFrame(packet.getTimestamp());
                 if (useByteStreamFormat) {
-                    currentFrameBuffer.put(byteStreamStartCodePrefix);
+                    currentFrame.getBuffer().put(byteStreamStartCodePrefix);
                 }
-                currentFrameBuffer.put(nalUnitData);
-                currentFrameBufferSize = currentFrameBuffer.position();
-                sendCurrentFrame();
+                currentFrame.getBuffer().put(nalUnitData);
+                sendFrame();
             }
 
             // libstreaming doesn't use anything else, so we won't implement other NAL unit types, at
@@ -192,47 +193,36 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
         lastSequenceNumberIsValid = true;
     }
 
-    private void initFrame(long timestamp) {
-        if (currentFrameBufferSize > 0) {
-            Log.w(TAG, "Initializing frame with pre-existing data. ts=" + currentFrameTimestamp);
-        }
-        currentFrameTimestamp = timestamp;
-        currentFrameBufferSize = 0;
-        currentFrameHasError = false;
-        currentFrameBuffer.clear();
-    }
+    private void startFrame(long timestamp) {
+        // Deal with potentially non-returned buffer due to error
+        if(currentFrame != null) {
+            currentFrame.getBuffer().clear();
 
-    private void sendCurrentFrame() {
-        if (currentFrameBufferSize == 0) {
-            Log.w(TAG, "Attempt to send 0-size frame!");
-            return;
-        }
-        Log.i(TAG, "currentFrameBufferSize,position=(" + currentFrameBufferSize + "," + currentFrameBuffer.position() + ")");
-
-        // TODO: Horrible byte copying without even finding out how to do it properly - REPLACE!!
-        // Only actually send full packets
-        byte[] frame = new byte[currentFrameBuffer.position()];
-        currentFrameBuffer.flip();
-        currentFrameBuffer.get(frame);
-
-        decodeFrame(frame, currentFrameTimestamp);
-
-        currentFrameBufferSize = 0;
-    }
-
-    private void decodeFrame(byte[] frame, long timestamp) {
-        // Send frame down to decoder avoiding the STAP-A onces
-        if (frameNalType == NalType.STAPA) {
-            if (sps == null) {
-                sps = frame;
-            } else if (pps == null) {
-                pps = frame;
+        // Otherwise, get a fresh buffer from the codec
+        } else {
+            try {
+                // Get buffer from decoder
+                currentFrame = decoder.getSampleBuffer();
+                currentFrame.getBuffer().clear();
+            } catch (RtpPlayerException e) {
+                // TODO: Proper error handling
+                e.printStackTrace();
             }
         }
 
-        decoder.decodeFrame(frame, timestamp);
-        decoder.printFrame(frame);
+        // Set the sample timestamp
+        currentFrame.setSampleTimestamp(timestamp);
+        // Reset error bit
+        currentFrameHasError = false;
+    }
 
+    private void sendFrame() {
+        currentFrame.setSampleSize(currentFrame.getBuffer().position());
+        currentFrame.getBuffer().flip();
+        decoder.decodeFrame(currentFrame);
+
+        // Always make currentFrame null to indicate we have returned the buffer to the codec
+        currentFrame = null;
     }
 
     public boolean isUseByteStreamFormat() {
@@ -241,11 +231,6 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
 
     public void setUseByteStreamFormat(boolean useByteStreamFormat) {
         this.useByteStreamFormat = useByteStreamFormat;
-    }
-
-    public int readSampleData(ByteBuffer inputBuf) {
-        inputBuf.put(currentFrame);
-        return currentFrame.length;
     }
 
     // Think how to get CSD-0/CSD-1 codec-specific data chunks
@@ -287,7 +272,7 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
         format.setByteBuffer("csd-0", ByteBuffer.wrap(header_sps));
         format.setByteBuffer("csd-1", ByteBuffer.wrap(header_pps));
 
-        format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
+        //format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
         format.setInteger("durationUs", 12600000);
 
         return format;

@@ -16,6 +16,8 @@
 
 package com.biasedbit.efflux.session;
 
+import android.util.Log;
+
 import com.biasedbit.efflux.logging.Logger;
 import com.biasedbit.efflux.network.ControlHandler;
 import com.biasedbit.efflux.network.ControlPacketDecoder;
