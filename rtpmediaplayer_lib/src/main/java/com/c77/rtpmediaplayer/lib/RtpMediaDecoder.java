@@ -9,6 +9,7 @@ import android.view.SurfaceView;
 import com.biasedbit.efflux.participant.RtpParticipant;
 import com.biasedbit.efflux.session.AbstractRtpSession;
 import com.biasedbit.efflux.session.SingleParticipantSession;
+import com.c77.rtpmediaplayer.lib.rtp.RtpMediaBuffer;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaExtractor;
 import com.c77.rtpmediaplayer.lib.video.Decoder;
 
@@ -171,7 +172,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             RtpParticipant remoteParticipant = RtpParticipant.createReceiver("10.34.0.10", 4556, 4557);
             session = new SingleParticipantSession("1", 96, participant, remoteParticipant);
 
-            session.addDataListener(rtpMediaExtractor);
+            session.addDataListener(new RtpMediaBuffer(rtpMediaExtractor));
 
             session.setDiscardOutOfOrder(false);
 
