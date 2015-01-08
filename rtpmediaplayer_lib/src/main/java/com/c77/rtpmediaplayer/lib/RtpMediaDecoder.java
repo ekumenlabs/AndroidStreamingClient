@@ -13,19 +13,15 @@ import com.c77.rtpmediaplayer.lib.rtp.RtpMediaBuffer;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaExtractor;
 import com.c77.rtpmediaplayer.lib.video.Decoder;
 
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * Created by ashi on 1/3/15.
  */
 public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
-
-    private static Log log = LogFactory.getLog(RtpMediaDecoder.class);
     private final SurfaceView surfaceView;
 
     private PlayerThread playerThread;
@@ -35,6 +31,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     private ByteBuffer[] outputBuffers;
     private MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
     private MediaCodec decoder;
+    private Log log = LogFactory.getLog(RtpMediaDecoder.class);
 
     public RtpMediaDecoder(SurfaceView surfaceView) {
         this.surfaceView = surfaceView;
@@ -56,8 +53,13 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     public void release() {
         rtpStopClient();
         if (decoder != null) {
-            decoder.stop();
+            try {
+                decoder.stop();
+            } catch (Exception e) {
+                log.error("Encountered error while trying to stop decoder", e);
+            }
             decoder.release();
+            decoder = null;
         }
     }
 
@@ -78,9 +80,6 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     @Override
     public void decodeFrame(BufferedSample decodeBuffer) {
-        // Dump buffer to logcat
-        log.info(decodeBuffer.toString());
-
         // Queue the sample to be decoded
         decoder.queueInputBuffer(decodeBuffer.getIndex(), 0,
                 decodeBuffer.getSampleSize(), decodeBuffer.getSampleTimestamp(), 0);
@@ -89,18 +88,14 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         int outIndex = decoder.dequeueOutputBuffer(info, 10000);
         switch (outIndex) {
             case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                log.info("INFO_OUTPUT_BUFFERS_CHANGED");
                 outputBuffers = decoder.getOutputBuffers();
                 break;
             case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                log.info("New format " + decoder.getOutputFormat());
                 break;
             case MediaCodec.INFO_TRY_AGAIN_LATER:
-                log.info("dequeueOutputBuffer timed out!");
                 break;
             default:
                 ByteBuffer buffer = outputBuffers[outIndex];
-                log.info("We can't use this buffer but render it due to the API limit, " + buffer);
 
                 decoder.releaseOutputBuffer(outIndex, true);
                 break;
@@ -108,7 +103,6 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
         // All decoded frames have been rendered, we can stop playing now
         if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-            log.info("OutputBuffer BUFFER_FLAG_END_OF_STREAM");
         }
     }
 
@@ -194,8 +188,6 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             session.setReceiveBufferSize(50000);
 
             session.init();
-            log.info("RTP Session created");
-
             try {
                 while (true) {
                     sleep(1000);

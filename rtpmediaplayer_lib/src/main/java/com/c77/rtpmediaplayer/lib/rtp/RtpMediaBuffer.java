@@ -5,9 +5,6 @@ import com.biasedbit.efflux.participant.RtpParticipantInfo;
 import com.biasedbit.efflux.session.RtpSession;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,9 +12,6 @@ import java.util.Map;
  * Created by julian on 1/7/15.
  */
 public class RtpMediaBuffer implements RtpSessionDataListener {
-
-    private static Log log = LogFactory.getLog(RtpMediaBuffer.class);
-
     private static final long OUT_OF_ORDER_MAX_TIME = 25000; //  Tenths of milliseconds. Wait up to this amount of
     // time for missing packets to arrive. If we start getting packets newer than this, discard the old
     // ones and restart
@@ -54,7 +48,6 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
             nextExpectedSequenceNumber = packet.getSequenceNumber();
             timestampDifference = System.currentTimeMillis() - packet.getTimestamp();
             currentState = States.DIRECT;
-            log.info("Stream started. Timestamps: " + timestampDifference);
         }
 
         // If the received packet is the one we were expecting: send it for processing
@@ -65,8 +58,6 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
 
             // Also send any subsequent packets that we were buffering!
             while(packetMap.containsKey(nextExpectedSequenceNumber)) {
-                log.warn("Sending old buffered packet. #" + nextExpectedSequenceNumber);
-
                 DataPacket oldPacket = packetMap.remove(nextExpectedSequenceNumber);
                 timestampMap.remove(nextExpectedSequenceNumber);
 
@@ -79,7 +70,6 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
             // If we are receiving packets that are much newer than what we were waiting for, discard
             // our buffers and restart from here
             if(packet.getTimestamp() - lastProcessedTimestamp > OUT_OF_ORDER_MAX_TIME) {
-                log.warn("Out of order packets are getting too old. Resetting");
                 upstream.dataPacketReceived(session, participant, packet);
                 lastProcessedTimestamp = packet.getTimestamp();
                 nextExpectedSequenceNumber = packet.getSequenceNumber() + 1;
@@ -89,7 +79,6 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
 
             // Otherwise, store the packet in the buffer for later
             } else {
-                log.warn("Saving out of order packet. #" + packet.getSequenceNumber());
                 packetMap.put(packet.getSequenceNumber(), packet);
                 timestampMap.put(packet.getSequenceNumber(), packet.getTimestamp());
             }
