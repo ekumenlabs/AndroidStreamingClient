@@ -7,6 +7,7 @@ import com.biasedbit.efflux.participant.RtpParticipantInfo;
 import com.biasedbit.efflux.session.RtpSession;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
 import com.c77.rtpmediaplayer.lib.BufferedSample;
+import com.c77.rtpmediaplayer.lib.RtpMediaDecoder;
 import com.c77.rtpmediaplayer.lib.RtpPlayerException;
 import com.c77.rtpmediaplayer.lib.video.Decoder;
 
@@ -49,10 +50,20 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
 
     @Override
     public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
+        String debugging = "RTP data. ";
+        debugging += packet.getDataSize() + "b ";
+        debugging += "#" + packet.getSequenceNumber();
+        debugging += " " + packet.getTimestamp();
+
         if (lastSequenceNumberIsValid && (lastSequenceNumber + 1) != packet.getSequenceNumber()) {
             sequenceError = true;
+            debugging += " SKIPPED (" + (packet.getSequenceNumber() - lastSequenceNumber - 1) + ")";
         } else {
             sequenceError = false;
+        }
+
+        if (RtpMediaDecoder.DEBUGGING) {
+            log.error(debugging);
         }
 
         // Parsing the RTP Packet - http://www.ietf.org/rfc/rfc3984.txt section 5.3
@@ -63,6 +74,9 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
 
         // If it's a single NAL packet then the entire payload is here
         if (nalType > 0 && nalType < 24) {
+            if (RtpMediaDecoder.DEBUGGING) {
+                log.info("NAL: full packet");
+            }
             // Send the buffer upstream for processing
 
             startFrame(packet.getTimestamp());
@@ -76,6 +90,9 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
             }
             // It's a FU-A unit, we should aggregate packets until done
         } else if (nalType == 28) {
+            if (RtpMediaDecoder.DEBUGGING) {
+                log.info("NAL: FU-A fragment");
+            }
             byte fuHeader = packet.getData().getByte(1);
 
             boolean fuStart = ((fuHeader & 0x80) != 0);
@@ -84,6 +101,10 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
 
             // Do we have a clean start of a frame?
             if (fuStart) {
+                if (RtpMediaDecoder.DEBUGGING) {
+                    log.info("FU-A start found. Starting new frame");
+                }
+
                 startFrame(packet.getTimestamp());
 
                 if (currentFrame != null) {
@@ -113,6 +134,10 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
                 // In that case, I don't think there's much we can do other than flush our buffer
                 // and discard everything until the next buffer
                 if (packet.getTimestamp() != currentFrame.getSampleTimestamp()) {
+                    if (RtpMediaDecoder.DEBUGGING) {
+                        log.warn("Non-consecutive timestamp found");
+                    }
+
                     currentFrameHasError = true;
                 }
                 if (sequenceError) {
@@ -122,10 +147,14 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
                 // If we survived possible errors, collect data to the current frame buffer
                 if (!currentFrameHasError) {
                     currentFrame.getBuffer().put(packet.getData().toByteBuffer(2, packet.getDataSize() - 2));
-                } else {
+                } else if (RtpMediaDecoder.DEBUGGING) {
+                    log.info("Dropping frame");
                 }
 
                 if (fuEnd) {
+                    if (RtpMediaDecoder.DEBUGGING) {
+                        log.info("FU-A end found. Sending frame!");
+                    }
                     try {
                         sendFrame();
                     } catch (Throwable t) {
@@ -136,6 +165,9 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
 
             // STAP-A, used by libstreaming to embed SPS and PPS into the video stream
         } else if (nalType == 24) {
+            if (RtpMediaDecoder.DEBUGGING) {
+                log.info("NAL: STAP-A");
+            }
             // This frame type includes a series of concatenated NAL units, each preceded
             // by a 16-bit size field
 

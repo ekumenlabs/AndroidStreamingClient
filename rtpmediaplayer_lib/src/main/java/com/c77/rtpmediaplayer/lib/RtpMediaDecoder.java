@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
  * Created by ashi on 1/3/15.
  */
 public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
+    public static final boolean DEBUGGING = false;
     private final SurfaceView surfaceView;
 
     private PlayerThread playerThread;
@@ -80,6 +81,11 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     @Override
     public void decodeFrame(BufferedSample decodeBuffer) {
+        if (DEBUGGING) {
+            // Dump buffer to logcat
+            log.info(decodeBuffer.toString());
+        }
+
         // Queue the sample to be decoded
         decoder.queueInputBuffer(decodeBuffer.getIndex(), 0,
                 decodeBuffer.getSampleSize(), decodeBuffer.getSampleTimestamp(), 0);
@@ -88,21 +94,34 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         int outIndex = decoder.dequeueOutputBuffer(info, 10000);
         switch (outIndex) {
             case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
+                if (DEBUGGING) {
+                    log.info("INFO_OUTPUT_BUFFERS_CHANGED");
+                }
                 outputBuffers = decoder.getOutputBuffers();
                 break;
             case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
+                if (DEBUGGING) {
+                    log.info("New format " + decoder.getOutputFormat());
+                }
                 break;
             case MediaCodec.INFO_TRY_AGAIN_LATER:
+                if (DEBUGGING) {
+                    log.info("dequeueOutputBuffer timed out!");
+                }
                 break;
             default:
-                ByteBuffer buffer = outputBuffers[outIndex];
+                if (DEBUGGING) {
+                    ByteBuffer buffer = outputBuffers[outIndex];
+                    log.info("We can't use this buffer but render it due to the API limit, " + buffer);
+                }
 
                 decoder.releaseOutputBuffer(outIndex, true);
                 break;
         }
 
         // All decoded frames have been rendered, we can stop playing now
-        if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+        if (((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) && DEBUGGING) {
+            log.info("OutputBuffer BUFFER_FLAG_END_OF_STREAM");
         }
     }
 
@@ -188,6 +207,8 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             session.setReceiveBufferSize(50000);
 
             session.init();
+            log.info("RTP Session created");
+
             try {
                 while (true) {
                     sleep(1000);
