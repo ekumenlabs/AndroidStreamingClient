@@ -39,6 +39,8 @@ import com.biasedbit.efflux.participant.ParticipantDatabase;
 import com.biasedbit.efflux.participant.ParticipantOperation;
 import com.biasedbit.efflux.participant.RtpParticipant;
 import com.biasedbit.efflux.participant.RtpParticipantInfo;
+import com.c77.rtpmediaplayer.lib.RtpMediaDecoder;
+
 import org.jboss.netty.bootstrap.ConnectionlessBootstrap;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -55,18 +57,19 @@ import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.TimerTask;
 
 import java.net.SocketAddress;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.Collections;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collection;
+
 /**
  * @author <a:mailto="bruno.carvalho@wit-software.com" />Bruno de Carvalho</a>
  */
@@ -89,7 +92,6 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
     protected static final boolean AUTOMATED_RTCP_HANDLING = true;
     protected static final boolean TRY_TO_UPDATE_ON_EVERY_SDES = true;
     protected static final int PARTICIPANT_DATABASE_CLEANUP = 10;
-    private static final boolean DEBUGGING = false;
 
     // configuration --------------------------------------------------------------------------------------------------
 
@@ -143,19 +145,19 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
                               OrderedMemoryAwareThreadPoolExecutor executor) {
         this(id, payloadType, local, null, executor);
     }
-    
+
     public AbstractRtpSession(String id, int payloadType, RtpParticipant local, HashedWheelTimer timer,
-    		OrderedMemoryAwareThreadPoolExecutor executor) {
-    	this(id, Collections.singleton(payloadType), local, timer, executor);
-    }
-    
-    public AbstractRtpSession(String id, Collection<Integer> payloadTypes , RtpParticipant local, HashedWheelTimer timer,
                               OrderedMemoryAwareThreadPoolExecutor executor) {
-    	for (int payloadType : payloadTypes) {
-    		if ((payloadType < 0) || (payloadType > 127)) {
-    			throw new IllegalArgumentException("PayloadTypes must be in range [0;127]");
-    		}   		
-    	}
+        this(id, Collections.singleton(payloadType), local, timer, executor);
+    }
+
+    public AbstractRtpSession(String id, Collection<Integer> payloadTypes, RtpParticipant local, HashedWheelTimer timer,
+                              OrderedMemoryAwareThreadPoolExecutor executor) {
+        for (int payloadType : payloadTypes) {
+            if ((payloadType < 0) || (payloadType > 127)) {
+                throw new IllegalArgumentException("PayloadTypes must be in range [0;127]");
+            }
+        }
 
         if (!local.isReceiver()) {
             throw new IllegalArgumentException("Local participant must have its data & control addresses set");
@@ -224,7 +226,7 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
         this.dataBootstrap.setOption("sendBufferSize", this.sendBufferSize);
         this.dataBootstrap.setOption("receiveBufferSize", this.receiveBufferSize);
         this.dataBootstrap.setOption("receiveBufferSizePredictorFactory",
-                                     new FixedReceiveBufferSizePredictorFactory(this.receiveBufferSize));
+                new FixedReceiveBufferSizePredictorFactory(this.receiveBufferSize));
         this.dataBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = Channels.pipeline();
@@ -241,7 +243,7 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
         this.controlBootstrap.setOption("sendBufferSize", this.sendBufferSize);
         this.controlBootstrap.setOption("receiveBufferSize", this.receiveBufferSize);
         this.controlBootstrap.setOption("receiveBufferSizePredictorFactory",
-                                        new FixedReceiveBufferSizePredictorFactory(this.receiveBufferSize));
+                new FixedReceiveBufferSizePredictorFactory(this.receiveBufferSize));
         this.controlBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
             public ChannelPipeline getPipeline() throws Exception {
                 ChannelPipeline pipeline = Channels.pipeline();
@@ -276,7 +278,7 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
             return false;
         }
 
-        if (DEBUGGING) {
+        if (RtpMediaDecoder.DEBUGGING) {
             LOG.debug("Data & Control channels bound for RtpSession with id {}.", this.id);
         }
 
@@ -334,9 +336,9 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
             return false;
         }
         if (!this.payloadTypes.contains(packet.getPayloadType()) && this.payloadTypes.size() == 1) {
-        	packet.setPayloadType(this.payloadTypes.iterator().next());
+            packet.setPayloadType(this.payloadTypes.iterator().next());
         }
-        		
+
         packet.setSsrc(this.localParticipant.getSsrc());
         packet.setSequenceNumber(this.sequence.incrementAndGet());
         this.internalSendData(packet);
@@ -378,7 +380,7 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
     @Override
     public boolean addReceiver(RtpParticipant remoteParticipant) {
         return (remoteParticipant.getSsrc() != this.localParticipant.getSsrc()) &&
-               this.participantDatabase.addReceiver(remoteParticipant);
+                this.participantDatabase.addReceiver(remoteParticipant);
     }
 
     @Override
@@ -465,7 +467,7 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
             }
 
             LOG.warn("SSRC collision with remote end detected on session with id {}; updating SSRC from {} to {}.",
-                     this.id, oldSsrc, newSsrc);
+                    this.id, oldSsrc, newSsrc);
             for (RtpSessionEventListener listener : this.eventListeners) {
                 listener.resolvedSsrcConflict(this, oldSsrc, newSsrc);
             }
@@ -481,7 +483,7 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
 
         // Should the packet be discarded due to out of order SN?
         if ((participant.getLastSequenceNumber() >= packet.getSequenceNumber()) && this.discardOutOfOrder) {
-            if (DEBUGGING) {
+            if (RtpMediaDecoder.DEBUGGING) {
                 LOG.info("Discarded out of order packet from {} in session with id {} (last SN was {}, packet SN was {}).",
                         participant, this.id, participant.getLastSequenceNumber(), packet.getSequenceNumber());
             }
@@ -619,7 +621,7 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
             }
         }
         LOG.trace("Received BYE for participants with SSRCs {} in session with id '{}' (reason: '{}').",
-                  packet.getSsrcList(), this.id, packet. getReasonForLeaving());
+                packet.getSsrcList(), this.id, packet.getReasonForLeaving());
     }
 
     protected abstract ParticipantDatabase createDatabase();
@@ -843,7 +845,7 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
         this.dataBootstrap.releaseExternalResources();
         this.controlBootstrap.releaseExternalResources();
 
-        if (DEBUGGING) {
+        if (RtpMediaDecoder.DEBUGGING) {
             LOG.debug("RtpSession with id {} terminated.", this.id);
         }
 

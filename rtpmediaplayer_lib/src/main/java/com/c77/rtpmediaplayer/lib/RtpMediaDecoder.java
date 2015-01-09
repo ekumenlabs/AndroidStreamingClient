@@ -17,12 +17,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.nio.ByteBuffer;
+import java.util.Properties;
 
 /**
  * Created by ashi on 1/3/15.
  */
 public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
-    public static final boolean DEBUGGING = false;
+    private static final java.lang.String DEBUGGING_PROPERTY = "DEBUGGING";
+    public static boolean DEBUGGING;
     private final SurfaceView surfaceView;
 
     private PlayerThread playerThread;
@@ -35,6 +37,19 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     private Log log = LogFactory.getLog(RtpMediaDecoder.class);
 
     public RtpMediaDecoder(SurfaceView surfaceView) {
+        this.surfaceView = surfaceView;
+        surfaceView.getHolder().addCallback(this);
+        DEBUGGING = false;
+    }
+
+    /**
+     *
+     * @param surfaceView surface where to play video streaming
+     * @param properties used to configure the debugging variable
+     */
+    public RtpMediaDecoder(SurfaceView surfaceView, Properties properties) {
+        DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
+        log.info("Debugging set to: " + DEBUGGING);
         this.surfaceView = surfaceView;
         surfaceView.getHolder().addCallback(this);
     }
@@ -207,6 +222,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             session.setReceiveBufferSize(50000);
 
             session.init();
+
             log.info("RTP Session created");
 
             try {
