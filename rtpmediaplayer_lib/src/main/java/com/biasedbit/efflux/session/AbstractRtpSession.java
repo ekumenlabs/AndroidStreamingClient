@@ -89,6 +89,7 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
     protected static final boolean AUTOMATED_RTCP_HANDLING = true;
     protected static final boolean TRY_TO_UPDATE_ON_EVERY_SDES = true;
     protected static final int PARTICIPANT_DATABASE_CLEANUP = 10;
+    private static final boolean DEBUGGING = false;
 
     // configuration --------------------------------------------------------------------------------------------------
 
@@ -273,6 +274,10 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
             this.dataBootstrap.releaseExternalResources();
             this.controlBootstrap.releaseExternalResources();
             return false;
+        }
+
+        if (DEBUGGING) {
+            LOG.debug("Data & Control channels bound for RtpSession with id {}.", this.id);
         }
 
         // Send first RTCP packet.
@@ -476,6 +481,10 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
 
         // Should the packet be discarded due to out of order SN?
         if ((participant.getLastSequenceNumber() >= packet.getSequenceNumber()) && this.discardOutOfOrder) {
+            if (DEBUGGING) {
+                LOG.info("Discarded out of order packet from {} in session with id {} (last SN was {}, packet SN was {}).",
+                        participant, this.id, participant.getLastSequenceNumber(), packet.getSequenceNumber());
+            }
             return;
         }
 
@@ -833,6 +842,10 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
 
         this.dataBootstrap.releaseExternalResources();
         this.controlBootstrap.releaseExternalResources();
+
+        if (DEBUGGING) {
+            LOG.debug("RtpSession with id {} terminated.", this.id);
+        }
 
         for (RtpSessionEventListener listener : this.eventListeners) {
             listener.sessionTerminated(this, cause);
