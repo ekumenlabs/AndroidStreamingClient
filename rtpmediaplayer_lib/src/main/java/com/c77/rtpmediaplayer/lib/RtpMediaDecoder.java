@@ -23,8 +23,11 @@ import java.util.Properties;
  * Created by ashi on 1/3/15.
  */
 public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
-    private static final java.lang.String DEBUGGING_PROPERTY = "DEBUGGING";
+    public static final String DEBUGGING_PROPERTY = "DEBUGGING";
+    public static final String CONFIG_USE_NIO = "USE_NIO";
+
     public static boolean DEBUGGING;
+
     private final SurfaceView surfaceView;
 
     private PlayerThread playerThread;
@@ -36,34 +39,37 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     private MediaCodec decoder;
     private Log log = LogFactory.getLog(RtpMediaDecoder.class);
 
+    private final Properties configuration;
+
     public RtpMediaDecoder(SurfaceView surfaceView) {
         this.surfaceView = surfaceView;
         surfaceView.getHolder().addCallback(this);
         DEBUGGING = false;
+        configuration = new Properties();
     }
 
     /**
-     *
      * @param surfaceView surface where to play video streaming
-     * @param properties used to configure the debugging variable
+     * @param properties  used to configure the debugging variable
      */
     public RtpMediaDecoder(SurfaceView surfaceView, Properties properties) {
+        configuration = properties;
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
         log.info("Debugging set to: " + DEBUGGING);
         this.surfaceView = surfaceView;
         surfaceView.getHolder().addCallback(this);
     }
 
-    private void rtpStartClient() {
-        // Create a decoder and pass it to the Rtp Extractor
-        rtpMediaExtractor = new RtpMediaExtractor(this);
-
-        rtpSessionThread = new RTPClientThread();
-        rtpSessionThread.start();
+    public void start() {
+        rtpStartClient();
     }
 
-    private void rtpStopClient() {
-        rtpSessionThread.interrupt();
+    /**
+     * Restarts the underlying RTP session
+     */
+    public void restart() {
+        rtpStopClient();
+        rtpStartClient();
     }
 
     public void release() {
@@ -79,10 +85,16 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         }
     }
 
-    private int readSampleData(ByteBuffer buffer, byte[] frameBytes) {
-        buffer.clear();
-        buffer.put(frameBytes);
-        return frameBytes.length;
+    private void rtpStartClient() {
+        // Create a decoder and pass it to the Rtp Extractor
+        rtpMediaExtractor = new RtpMediaExtractor(this);
+
+        rtpSessionThread = new RTPClientThread();
+        rtpSessionThread.start();
+    }
+
+    private void rtpStopClient() {
+        rtpSessionThread.interrupt();
     }
 
     @Override
@@ -140,10 +152,6 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         }
     }
 
-    public void start() {
-        rtpStartClient();
-    }
-
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         android.view.ViewGroup.LayoutParams layoutParams = surfaceView.getLayoutParams();
@@ -171,6 +179,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         public PlayerThread(Surface surface) {
             this.surface = surface;
         }
+
         @Override
         public void run() {
             MediaFormat mediaFormat = rtpMediaExtractor.getMediaFormat();
@@ -214,7 +223,9 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             // NOTE: Despite fixing the memory usage, it is still pending to test which method produces
             // best overall results
             //
-            session.setUseNio(false);
+            boolean useNio = Boolean.parseBoolean(configuration.getProperty(CONFIG_USE_NIO, "true"));
+            session.setUseNio(useNio);
+            log.info("Use NIO = " + useNio);
 
             // NOTE: This parameter seems to affect the performance a lot.
             // The default value of 1500 drops many more packets than
