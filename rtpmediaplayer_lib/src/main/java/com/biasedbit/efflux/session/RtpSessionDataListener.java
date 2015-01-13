@@ -23,6 +23,5 @@ import com.biasedbit.efflux.participant.RtpParticipantInfo;
  * @author <a href="http://bruno.biasedbit.com/">Bruno de Carvalho</a>
  */
 public interface RtpSessionDataListener {
-
-    void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet);
+    void dataPacketReceived(DataPacket packet);
 }

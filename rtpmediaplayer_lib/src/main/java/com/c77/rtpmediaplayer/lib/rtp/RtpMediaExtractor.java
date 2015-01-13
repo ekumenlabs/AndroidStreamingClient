@@ -49,7 +49,7 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
     }
 
     @Override
-    public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
+    public void dataPacketReceived(DataPacket packet) {
         String debugging = "RTP data. ";
         debugging += packet.getDataSize() + "b ";
         debugging += "#" + packet.getSequenceNumber();

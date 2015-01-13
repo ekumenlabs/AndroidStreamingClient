@@ -51,7 +51,7 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
     }
 
     @Override
-    public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
+    public void dataPacketReceived(DataPacket packet) {
         if (currentState == States.IDLE) {
             nextExpectedSequenceNumber = packet.getSequenceNumber();
             timestampDifference = System.currentTimeMillis() - packet.getTimestamp();
@@ -65,7 +65,7 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
 
         // If the received packet is the one we were expecting: send it for processing
         if (packet.getSequenceNumber() == nextExpectedSequenceNumber) {
-            upstream.dataPacketReceived(session, participant, packet);
+            upstream.dataPacketReceived(packet);
             lastProcessedTimestamp = packet.getTimestamp();
             nextExpectedSequenceNumber = packet.getSequenceNumber() + 1;
 
@@ -77,7 +77,7 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
                 DataPacket oldPacket = packetMap.remove(nextExpectedSequenceNumber);
                 timestampMap.remove(nextExpectedSequenceNumber);
 
-                upstream.dataPacketReceived(session, participant, oldPacket);
+                upstream.dataPacketReceived(oldPacket);
                 lastProcessedTimestamp = oldPacket.getTimestamp();
                 nextExpectedSequenceNumber = oldPacket.getSequenceNumber() + 1;
             }
@@ -89,7 +89,7 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
                 if (RtpMediaDecoder.DEBUGGING) {
                     log.warn("Out of order packets are getting too old. Resetting");
                 }
-                upstream.dataPacketReceived(session, participant, packet);
+                upstream.dataPacketReceived(packet);
                 lastProcessedTimestamp = packet.getTimestamp();
                 nextExpectedSequenceNumber = packet.getSequenceNumber() + 1;
 
