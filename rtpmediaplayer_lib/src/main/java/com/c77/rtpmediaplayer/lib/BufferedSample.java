@@ -47,7 +47,7 @@ public class BufferedSample {
     public String toString() {
         String res = "[";
 
-        byte[] initialChunk = new byte[Math.min(16,sampleSize)];
+        byte[] initialChunk = new byte[Math.min(16, sampleSize)];
 
         int oldpos = buffer.position();
         buffer.position(0);

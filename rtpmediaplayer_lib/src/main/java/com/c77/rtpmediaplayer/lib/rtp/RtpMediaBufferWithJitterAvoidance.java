@@ -2,7 +2,6 @@ package com.c77.rtpmediaplayer.lib.rtp;
 
 import com.biasedbit.efflux.packet.DataPacket;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
-import com.c77.rtpmediaplayer.lib.RtpMediaDecoder;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -110,6 +109,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
 
         /**
          * Create a frame from a packet
+         *
          * @param packet
          */
         public Frame(DataPacket packet) {

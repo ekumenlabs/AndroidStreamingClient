@@ -9,7 +9,6 @@ import android.view.SurfaceView;
 import com.biasedbit.efflux.participant.RtpParticipant;
 import com.biasedbit.efflux.session.AbstractRtpSession;
 import com.biasedbit.efflux.session.SingleParticipantSession;
-import com.c77.rtpmediaplayer.lib.rtp.RtpMediaBuffer;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaBufferWithJitterAvoidance;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaExtractor;
 import com.c77.rtpmediaplayer.lib.video.Decoder;
