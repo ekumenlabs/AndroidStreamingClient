@@ -22,7 +22,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
 
     private State streamingState;
     private long lastTimestamp;
-    private long startingPoint;
+    private long firstFrameStartingPoint;
 
     // Stream streamingState
     protected enum State {
@@ -56,7 +56,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
-        FRAMES_DELAY_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "100"));
+        FRAMES_DELAY_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "800"));
     }
 
     @Override
@@ -67,7 +67,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
             lastTimestamp = getConvertedTimestamp(packet);
 
             // TODO: use instead of timestamps of frames
-            startingPoint = System.currentTimeMillis() - lastTimestamp;
+            firstFrameStartingPoint = System.currentTimeMillis() - lastTimestamp;
 
             streamingState = State.CONFIGURING;
         } else if (streamingState == State.CONFIGURING && getConvertedTimestamp(packet) != lastTimestamp) {
@@ -157,8 +157,10 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
         public void run() {
             super.run();
 
+            long timeWhenCycleStarted;
             while (running) {
                 if (RtpMediaBufferWithJitterAvoidance.State.STREAMING == streamingState) {
+                    timeWhenCycleStarted = System.currentTimeMillis();
                     // go through all the frames which timestamp is the range [downTimestampBound,upTimestampBound)
                     SortedMap<Long, Frame> copy = new TreeMap<Long, Frame>();
 
@@ -174,7 +176,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
                         if (DEBUGGING) {
                             log.info("Looking for frames between: [" + downTimestampBound + "," + upTimestampBound + ")");
                         }
-                        long timestamp = entry.getKey();
+                        long timestamp = frame.timestamp;
 
                         if (timestamp < upTimestampBound && timestamp >= downTimestampBound) {
                             Collection<DataPacket> packets = frame.getPackets();
@@ -196,7 +198,11 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
                     try {
                         sleep(SENDING_DELAY);
                         downTimestampBound = upTimestampBound;
-                        upTimestampBound += SENDING_DELAY;
+                        if (DEBUGGING) {
+                            log.info("actual delay: " + (System.currentTimeMillis() - timeWhenCycleStarted));
+                        }
+                        // use actual delay instead of SENDING_DELAY
+                        upTimestampBound += (System.currentTimeMillis() - timeWhenCycleStarted);
                     } catch (InterruptedException e) {
                         log.error("Error while waiting to send next frame", e);
                     }
