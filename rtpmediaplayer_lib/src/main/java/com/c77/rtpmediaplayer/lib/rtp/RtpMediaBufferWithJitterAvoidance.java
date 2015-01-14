@@ -59,10 +59,17 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
     public void dataPacketReceived(DataPacket packet) {
         if (streamingState == State.IDLE) {
             lastTimestamp = packet.getConvertedTimestamp();
+
+            // TODO: use instead of timestamps of frames
             startingPoint = System.currentTimeMillis() - lastTimestamp;
+
             streamingState = State.CONFIGURING;
         } else if (streamingState == State.CONFIGURING && packet.getConvertedTimestamp() != lastTimestamp) {
+            // should make an heuristic. First packet is not necessary the first
             SENDING_DELAY = Math.abs(packet.getConvertedTimestamp() - lastTimestamp);
+
+            downTimestampBound = lastTimestamp - FRAMES_WINDOW_MILLISECONDS;
+            upTimestampBound = downTimestampBound + SENDING_DELAY;
 
             if (DEBUGGING) {
                 log.info("Sending delay: " + SENDING_DELAY);
@@ -170,8 +177,8 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
 
                     try {
                         sleep(SENDING_DELAY);
-                        downTimestampBound = System.currentTimeMillis() - startingPoint;
-                        upTimestampBound = System.currentTimeMillis() - startingPoint + FRAMES_WINDOW_MILLISECONDS;
+                        downTimestampBound = upTimestampBound;
+                        upTimestampBound += SENDING_DELAY;
                     } catch (InterruptedException e) {
                         log.error("Error while waiting to send next frame", e);
                     }
