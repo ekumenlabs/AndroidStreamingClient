@@ -31,7 +31,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
 
     private static boolean DEBUGGING = false;
     private static long SENDING_DELAY = 50;
-    private static long FRAMES_WINDOW_MILLISECONDS = 100;
+    private static long FRAMES_DELAY_MILLISECONDS = 800;
 
     private final RtpSessionDataListener upstream;
     private final DataPacketSenderThread dataPacketSenderThread;
@@ -52,23 +52,23 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
-        FRAMES_WINDOW_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "100"));
+        FRAMES_DELAY_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "100"));
     }
 
     @Override
     public void dataPacketReceived(DataPacket packet) {
         if (streamingState == State.IDLE) {
-            lastTimestamp = packet.getConvertedTimestamp();
+            lastTimestamp = getConvertedTimestamp(packet);
 
             // TODO: use instead of timestamps of frames
             startingPoint = System.currentTimeMillis() - lastTimestamp;
 
             streamingState = State.CONFIGURING;
-        } else if (streamingState == State.CONFIGURING && packet.getConvertedTimestamp() != lastTimestamp) {
+        } else if (streamingState == State.CONFIGURING && getConvertedTimestamp(packet) != lastTimestamp) {
             // should make an heuristic. First packet is not necessary the first
-            SENDING_DELAY = Math.abs(packet.getConvertedTimestamp() - lastTimestamp);
+            SENDING_DELAY = Math.abs(getConvertedTimestamp(packet) - lastTimestamp);
 
-            downTimestampBound = lastTimestamp - FRAMES_WINDOW_MILLISECONDS;
+            downTimestampBound = lastTimestamp - FRAMES_DELAY_MILLISECONDS;
             upTimestampBound = downTimestampBound + SENDING_DELAY;
 
             if (DEBUGGING) {
@@ -79,9 +79,9 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
         }
 
         // discard packets that are too late
-        if (State.STREAMING == streamingState && packet.getConvertedTimestamp() < downTimestampBound) {
+        if (State.STREAMING == streamingState && getConvertedTimestamp(packet) < downTimestampBound) {
             if (DEBUGGING) {
-                log.info("Discarded packet with timestamp " + packet.getConvertedTimestamp());
+                log.info("Discarded packet with timestamp " + getConvertedTimestamp(packet));
             }
             return;
         }
@@ -92,9 +92,13 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
         }
     }
 
+    private long getConvertedTimestamp(DataPacket packet) {
+        return packet.getTimestamp()/90;
+    }
+
     private Frame getFrameForPacket(DataPacket packet) {
         Frame frame;
-        long timestamp = packet.getConvertedTimestamp();
+        long timestamp = getConvertedTimestamp(packet);
         if (frames.containsKey(timestamp)) {
             // if a frame with this timestamp already exists, add packet to it
             frame = frames.get(timestamp);
@@ -121,7 +125,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
          */
         public Frame(DataPacket packet) {
             packets = new TreeMap<Integer, DataPacket>();
-            timestamp = packet.getConvertedTimestamp();
+            timestamp = getConvertedTimestamp(packet);
             packets.put(new Integer(packet.getSequenceNumber()), packet);
         }
 

@@ -376,8 +376,4 @@ public class DataPacket {
                 .append(", data=").append(this.getDataSize()).append(" bytes}")
                 .toString();
     }
-
-    public long getConvertedTimestamp() {
-        return this.getTimestamp()/90;
-    }
 }
