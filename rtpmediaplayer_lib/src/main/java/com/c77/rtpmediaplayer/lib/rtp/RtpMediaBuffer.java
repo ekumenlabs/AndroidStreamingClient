@@ -1,6 +1,8 @@
 package com.c77.rtpmediaplayer.lib.rtp;
 
 import com.biasedbit.efflux.packet.DataPacket;
+import com.biasedbit.efflux.participant.RtpParticipantInfo;
+import com.biasedbit.efflux.session.RtpSession;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
 import com.c77.rtpmediaplayer.lib.RtpMediaDecoder;
 
@@ -49,7 +51,7 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
     }
 
     @Override
-    public void dataPacketReceived(DataPacket packet) {
+    public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
         if (currentState == States.IDLE) {
             nextExpectedSequenceNumber = packet.getSequenceNumber();
             timestampDifference = System.currentTimeMillis() - packet.getTimestamp();
@@ -63,7 +65,7 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
 
         // If the received packet is the one we were expecting: send it for processing
         if (packet.getSequenceNumber() == nextExpectedSequenceNumber) {
-            upstream.dataPacketReceived(packet);
+            upstream.dataPacketReceived(session, participant, packet);
             lastProcessedTimestamp = packet.getTimestamp();
             nextExpectedSequenceNumber = packet.getSequenceNumber() + 1;
 
@@ -75,7 +77,7 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
                 DataPacket oldPacket = packetMap.remove(nextExpectedSequenceNumber);
                 timestampMap.remove(nextExpectedSequenceNumber);
 
-                upstream.dataPacketReceived(oldPacket);
+                upstream.dataPacketReceived(session, participant, oldPacket);
                 lastProcessedTimestamp = oldPacket.getTimestamp();
                 nextExpectedSequenceNumber = oldPacket.getSequenceNumber() + 1;
             }
@@ -87,7 +89,7 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
                 if (RtpMediaDecoder.DEBUGGING) {
                     log.warn("Out of order packets are getting too old. Resetting");
                 }
-                upstream.dataPacketReceived(packet);
+                upstream.dataPacketReceived(session, participant, packet);
                 lastProcessedTimestamp = packet.getTimestamp();
                 nextExpectedSequenceNumber = packet.getSequenceNumber() + 1;
 

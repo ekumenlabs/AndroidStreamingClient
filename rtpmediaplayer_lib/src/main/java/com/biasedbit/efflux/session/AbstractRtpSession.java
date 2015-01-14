@@ -496,7 +496,7 @@ public abstract class AbstractRtpSession implements RtpSession, TimerTask {
 
         // Finally, dispatch the event to the data listeners.
         for (RtpSessionDataListener listener : this.dataListeners) {
-            listener.dataPacketReceived(packet);
+            listener.dataPacketReceived(this, participant.getInfo(), packet);
         }
     }
 

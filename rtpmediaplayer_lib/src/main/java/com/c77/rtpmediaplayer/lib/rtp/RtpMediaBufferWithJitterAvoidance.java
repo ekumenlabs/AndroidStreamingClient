@@ -1,6 +1,9 @@
 package com.c77.rtpmediaplayer.lib.rtp;
 
 import com.biasedbit.efflux.packet.DataPacket;
+import com.biasedbit.efflux.participant.RtpParticipant;
+import com.biasedbit.efflux.participant.RtpParticipantInfo;
+import com.biasedbit.efflux.session.RtpSession;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
 
 import org.apache.commons.logging.Log;
@@ -40,6 +43,8 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
     private Log log = LogFactory.getLog(RtpMediaBufferWithJitterAvoidance.class);
     private long downTimestampBound;
     private long upTimestampBound;
+    RtpSession session;
+    RtpParticipantInfo participant;
 
     public RtpMediaBufferWithJitterAvoidance(RtpSessionDataListener upstream) {
         this.upstream = upstream;
@@ -56,8 +61,10 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
     }
 
     @Override
-    public void dataPacketReceived(DataPacket packet) {
+    public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
         if (streamingState == State.IDLE) {
+            this.session = session;
+            this.participant = participant;
             lastTimestamp = getConvertedTimestamp(packet);
 
             // TODO: use instead of timestamps of frames
@@ -173,7 +180,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
                         if (timestamp < upTimestampBound && timestamp >= downTimestampBound) {
                             Collection<DataPacket> packets = frame.getPackets();
                             for (DataPacket packet : packets) {
-                                upstream.dataPacketReceived(packet);
+                                upstream.dataPacketReceived(session, participant, packet);
                             }
 
                             synchronized (frames) {
