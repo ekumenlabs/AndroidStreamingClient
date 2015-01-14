@@ -22,7 +22,6 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
 
     private State streamingState;
     private long lastTimestamp;
-    private long firstFrameStartingPoint;
 
     // Stream streamingState
     protected enum State {
@@ -65,9 +64,6 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
             this.session = session;
             this.participant = participant;
             lastTimestamp = getConvertedTimestamp(packet);
-
-            // TODO: use instead of timestamps of frames
-            firstFrameStartingPoint = System.currentTimeMillis() - lastTimestamp;
 
             streamingState = State.CONFIGURING;
         } else if (streamingState == State.CONFIGURING && getConvertedTimestamp(packet) != lastTimestamp) {
