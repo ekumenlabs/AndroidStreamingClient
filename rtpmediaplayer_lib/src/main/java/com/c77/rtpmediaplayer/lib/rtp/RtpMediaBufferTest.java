@@ -16,26 +16,55 @@ public class RtpMediaBufferTest {
     // Amount of time to consider acceptable for the buffer to deliver a packet out of its expected time
     private static final int DELAY_ASSERT_THRESHOLD = 30;
 
+    MockMediaExtractor results;
+    Properties configuration = new Properties();
+    RtpMediaBufferWithJitterAvoidance test;
+    private long timestampDelta;
+
     public RtpMediaBufferTest() {
+        configuration.setProperty(RtpMediaBufferWithJitterAvoidance.FRAMES_WINDOW_PROPERTY, Integer.toString(DELAY));
+
         testInOrder();
         testReorder();
+        testDropPacket();
 
         System.out.println("All tests passed!");
     }
 
-    public void testReorder() {
-        MockMediaExtractor results = new MockMediaExtractor();
+    private void testDropPacket() {
+        results = new MockMediaExtractor();
+        test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
 
-        // Configure and create the buffer
-        Properties configuration = new Properties();
-        configuration.setProperty(RtpMediaBufferWithJitterAvoidance.FRAMES_WINDOW_PROPERTY, Integer.toString(DELAY));
-        RtpMediaBufferWithJitterAvoidance test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
+
+
+        test.stop();
+    }
+
+    private void assertNoDroppedFramesResults() {
+        // Do we have the expected number of packets?
+        sillyAssertEquals(results.packetList.size(), 8, "Packets missing in decoder");
+
+        DataPacket receivedPacket;
+        for(int i=0;i<8;i++) {
+            // Are the packets in proper order?
+            receivedPacket = results.packetList.get(i).packet;
+            sillyAssertEquals(receivedPacket.getSequenceNumber(), i + 1, "packet received out of order");
+
+            // See if the packets are indeed delayed by the configured delay amount
+            sillyAssertLongDifferenceWithThreshold(results.packetList.get(i).receivedTimestamp,
+                    receivedPacket.getTimestamp()/90 + timestampDelta + DELAY, DELAY_ASSERT_THRESHOLD,
+                    "packet s#" + receivedPacket.getSequenceNumber() + " at the wrong time");
+        }
+    }
+
+    public void testReorder() {
+        results = new MockMediaExtractor();
+        test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
 
         try {
             // Feed a packet stream in order
             long realInitialTimestamp = System.currentTimeMillis();
-            long timestampDelta = realInitialTimestamp - 10000;
-            System.out.println("Time delta = " + timestampDelta);
+            timestampDelta = realInitialTimestamp - 10000;
 
             test.dataPacketReceived(makePacket(10000, 1));
             test.dataPacketReceived(makePacket(10000, 2));
@@ -53,41 +82,24 @@ public class RtpMediaBufferTest {
             // Wait for the buffer to spit out the results and see what is there
             Thread.sleep(1000);
 
-            // Do we have the expected number of packets?
-            sillyAssertEquals(results.packetList.size(), 8, "Packets missing in decoder");
-
-            DataPacket receivedPacket;
-            for(int i=0;i<8;i++) {
-                // Are the packets in proper order?
-                receivedPacket = results.packetList.get(i).packet;
-                sillyAssertEquals(receivedPacket.getSequenceNumber(), i + 1, "packet received out of order");
-
-                // See if the packets are indeed delayed by the configured delay amount
-                sillyAssertLongDifferenceWithThreshold(results.packetList.get(i).receivedTimestamp,
-                        receivedPacket.getTimestamp()/90 + timestampDelta + DELAY, DELAY_ASSERT_THRESHOLD,
-                        "packet s#" + receivedPacket.getSequenceNumber() + " at the wrong time");
-            }
+            assertNoDroppedFramesResults();
 
             System.out.println("Test passed (testReorder)");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        test.dataPacketReceived(makePacket(10034, 5));
+
+        test.stop();
     }
 
     public void testInOrder() {
-        MockMediaExtractor results = new MockMediaExtractor();
-
-        // Configure and create the buffer
-        Properties configuration = new Properties();
-        configuration.setProperty(RtpMediaBufferWithJitterAvoidance.FRAMES_WINDOW_PROPERTY, Integer.toString(DELAY));
-        RtpMediaBufferWithJitterAvoidance test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
+        results = new MockMediaExtractor();
+        test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
 
         try {
             // Feed a packet stream in order
             long realInitialTimestamp = System.currentTimeMillis();
-            long timestampDelta = realInitialTimestamp - 10000;
-            System.out.println("Time delta = " + timestampDelta);
+            timestampDelta = realInitialTimestamp - 10000;
 
             test.dataPacketReceived(makePacket(10000, 1));
             test.dataPacketReceived(makePacket(10000, 2));
@@ -105,26 +117,14 @@ public class RtpMediaBufferTest {
             // Wait for the buffer to spit out the results and see what is there
             Thread.sleep(1000);
 
-            // Do we have the expected number of packets?
-            sillyAssertEquals(results.packetList.size(), 8, "Packets missing in decoder");
-
-            DataPacket receivedPacket;
-            for(int i=0;i<8;i++) {
-                // Are the packets in proper order?
-                receivedPacket = results.packetList.get(i).packet;
-                sillyAssertEquals(receivedPacket.getSequenceNumber(), i + 1, "packet received out of order");
-
-                // See if the packets are indeed delayed by the configured delay amount
-                sillyAssertLongDifferenceWithThreshold(results.packetList.get(i).receivedTimestamp,
-                        receivedPacket.getTimestamp()/90 + timestampDelta + DELAY, DELAY_ASSERT_THRESHOLD,
-                        "packet s#" + receivedPacket.getSequenceNumber() + " at the wrong time");
-            }
+            assertNoDroppedFramesResults();
 
             System.out.println("Test passed (testInOrder)");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        test.dataPacketReceived(makePacket(10034, 5));
+
+        test.stop();
     }
 
     private void sillyAssertTrue(boolean succeed, String message) {

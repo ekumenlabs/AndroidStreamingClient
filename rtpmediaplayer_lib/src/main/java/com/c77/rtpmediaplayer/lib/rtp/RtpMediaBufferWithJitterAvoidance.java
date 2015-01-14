@@ -138,12 +138,20 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
         }
     }
 
+    public void stop() {
+        if(dataPacketSenderThread != null) {
+            dataPacketSenderThread.shutdown();
+        }
+    }
+
     private class DataPacketSenderThread extends Thread {
+        private boolean running = true;
+
         @Override
         public void run() {
             super.run();
 
-            while (true) {
+            while (running) {
                 if (RtpMediaBufferWithJitterAvoidance.State.STREAMING == streamingState) {
                     // go through all the frames which timestamp is the range [downTimestampBound,upTimestampBound)
                     SortedMap<Long, Frame> copy = new TreeMap<Long, Frame>();
@@ -188,6 +196,10 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
                     }
                 }
             }
+        }
+
+        public void shutdown() {
+            running = false;
         }
     }
 }
