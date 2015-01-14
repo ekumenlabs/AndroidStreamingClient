@@ -23,6 +23,7 @@ public class DecoderMainActivity extends Activity implements View.OnClickListene
         surfaceView = new SurfaceView(this);
         setContentView(surfaceView);
         rtpMediaDecoder = new RtpMediaDecoder(surfaceView);
+        rtpMediaDecoder.DEBUGGING = true;
         rtpMediaDecoder.start();
 
         surfaceView.setOnClickListener(this);

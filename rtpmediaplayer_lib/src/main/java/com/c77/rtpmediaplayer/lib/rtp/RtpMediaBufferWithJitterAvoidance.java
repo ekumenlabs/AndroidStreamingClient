@@ -16,7 +16,7 @@ import java.util.TreeMap;
  */
 public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener {
     public static final String DEBUGGING_PROPERTY = "DEBUGGING";
-    private static final java.lang.String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW";
+    public static final java.lang.String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW";
 
     private State streamingState;
     private long lastTimestamp;
