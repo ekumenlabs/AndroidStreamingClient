@@ -4,17 +4,19 @@ import com.biasedbit.efflux.packet.DataPacket;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Created by julian on 1/14/15.
  */
 public class RtpMediaBufferTest {
     // Configured delay time for the buffer
-    private static final int DELAY = 800;
+    private static final int DELAY = 200;
     // Amount of time to consider acceptable for the buffer to deliver a packet out of its expected time
-    private static final int DELAY_ASSERT_THRESHOLD = 30;
+    private static final int DELAY_ASSERT_THRESHOLD = 55;
 
     MockMediaExtractor results;
     Properties configuration = new Properties();
@@ -26,26 +28,144 @@ public class RtpMediaBufferTest {
 
         testInOrder();
         testReorder();
-        testDropPacket();
+        testDropMissingPacket();
+        testDropPacketTooOld();
 
         System.out.println("All tests passed!");
     }
 
-    private void testDropPacket() {
+    private void testDropPacketTooOld() {
         results = new MockMediaExtractor();
         test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
 
+        try {
+            // Feed a packet stream in order
+            long realInitialTimestamp = System.currentTimeMillis();
+            timestampDelta = realInitialTimestamp - 10000;
 
+            test.dataPacketReceived(makePacket(10000, 1));
+            test.dataPacketReceived(makePacket(10000, 4));
+
+            Thread.sleep(50);
+            test.dataPacketReceived(makePacket(10050, 5));
+            test.dataPacketReceived(makePacket(10050, 6));
+
+            Thread.sleep(50);
+            test.dataPacketReceived(makePacket(10100, 7));
+            test.dataPacketReceived(makePacket(10100, 8));
+            test.dataPacketReceived(makePacket(10000, 3));
+
+            Thread.sleep(50);
+            test.dataPacketReceived(makePacket(10150, 9));
+            //test.dataPacketReceived(makePacket(10150, 10));
+            test.dataPacketReceived(makePacket(10150, 11));
+
+            Thread.sleep(50);
+            test.dataPacketReceived(makePacket(10200, 12));
+            test.dataPacketReceived(makePacket(10200, 13));
+
+            Thread.sleep(50);
+            test.dataPacketReceived(makePacket(10250, 14));
+            test.dataPacketReceived(makePacket(10250, 15));
+            test.dataPacketReceived(makePacket(10250, 16));
+
+            Thread.sleep(20);
+            test.dataPacketReceived(makePacket(10000, 2));
+
+            // Wait for the buffer to spit out the results and see what is there
+            Thread.sleep(1000);
+
+            Set drops = new HashSet<Integer>();
+            drops.add(10);
+            drops.add(2);
+            assertCorrectDroppedFramesResults(16, drops);
+
+            System.out.println("Test passed (testDropPacketTooOld)");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         test.stop();
     }
 
-    private void assertNoDroppedFramesResults() {
+    private void testDropMissingPacket() {
+        results = new MockMediaExtractor();
+        test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
+
+        try {
+            // Feed a packet stream in order
+            long realInitialTimestamp = System.currentTimeMillis();
+            timestampDelta = realInitialTimestamp - 10000;
+
+            test.dataPacketReceived(makePacket(10000, 1));
+            test.dataPacketReceived(makePacket(10000, 2));
+            test.dataPacketReceived(makePacket(10000, 4));
+
+            Thread.sleep(50);
+            test.dataPacketReceived(makePacket(10050, 5));
+            test.dataPacketReceived(makePacket(10050, 6));
+
+            Thread.sleep(50);
+            test.dataPacketReceived(makePacket(10100, 7));
+            test.dataPacketReceived(makePacket(10100, 8));
+            test.dataPacketReceived(makePacket(10000, 3));
+
+            Thread.sleep(50);
+            test.dataPacketReceived(makePacket(10150, 9));
+            //test.dataPacketReceived(makePacket(10150, 10));
+            test.dataPacketReceived(makePacket(10150, 11));
+
+            Thread.sleep(50);
+            test.dataPacketReceived(makePacket(10200, 12));
+            test.dataPacketReceived(makePacket(10200, 13));
+
+            Thread.sleep(50);
+            test.dataPacketReceived(makePacket(10250, 14));
+            test.dataPacketReceived(makePacket(10250, 15));
+            test.dataPacketReceived(makePacket(10250, 16));
+
+            // Wait for the buffer to spit out the results and see what is there
+            Thread.sleep(1000);
+
+            Set drops = new HashSet<Integer>();
+            drops.add(new Integer(10));
+            assertCorrectDroppedFramesResults(16, drops);
+
+            System.out.println("Test passed (testDropMissingPacket)");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        test.stop();
+    }
+
+    private void assertCorrectDroppedFramesResults(int numpackets, Set<Integer> droppedSequenceNumbers) {
         // Do we have the expected number of packets?
-        sillyAssertEquals(results.packetList.size(), 8, "Packets missing in decoder");
+        sillyAssertEquals(results.packetList.size(), numpackets - droppedSequenceNumbers.size(), "Packets missing in decoder");
 
         DataPacket receivedPacket;
-        for(int i=0;i<8;i++) {
+        int sqnoToPacketShift = 1;
+        for(int i=0;i<numpackets - droppedSequenceNumbers.size();i++) {
+            if(droppedSequenceNumbers.contains(i+sqnoToPacketShift)) {
+                sqnoToPacketShift++;
+            }
+            // Are the packets in proper order?
+            receivedPacket = results.packetList.get(i).packet;
+            sillyAssertEquals(receivedPacket.getSequenceNumber(), i + sqnoToPacketShift, "packet received out of order");
+
+            // See if the packets are indeed delayed by the configured delay amount
+            sillyAssertLongDifferenceWithThreshold(results.packetList.get(i).receivedTimestamp,
+                    receivedPacket.getTimestamp()/90 + timestampDelta + DELAY, DELAY_ASSERT_THRESHOLD,
+                    "packet s#" + receivedPacket.getSequenceNumber() + " at the wrong time");
+        }
+    }
+
+    private void assertNoDroppedFramesResults(int numpackets) {
+        // Do we have the expected number of packets?
+        sillyAssertEquals(results.packetList.size(), numpackets, "Packets missing in decoder");
+
+        DataPacket receivedPacket;
+        for(int i=0;i<numpackets;i++) {
             // Are the packets in proper order?
             receivedPacket = results.packetList.get(i).packet;
             sillyAssertEquals(receivedPacket.getSequenceNumber(), i + 1, "packet received out of order");
@@ -82,7 +202,7 @@ public class RtpMediaBufferTest {
             // Wait for the buffer to spit out the results and see what is there
             Thread.sleep(1000);
 
-            assertNoDroppedFramesResults();
+            assertNoDroppedFramesResults(8);
 
             System.out.println("Test passed (testReorder)");
         } catch (InterruptedException e) {
@@ -106,18 +226,19 @@ public class RtpMediaBufferTest {
             test.dataPacketReceived(makePacket(10000, 3));
             test.dataPacketReceived(makePacket(10000, 4));
 
-            Thread.sleep(34);
+            // Note: the packets are arriving a bit slower than expected
+            Thread.sleep(50);
             test.dataPacketReceived(makePacket(10034, 5));
             test.dataPacketReceived(makePacket(10034, 6));
 
-            Thread.sleep(34);
+            Thread.sleep(50);
             test.dataPacketReceived(makePacket(10068, 7));
             test.dataPacketReceived(makePacket(10068, 8));
 
             // Wait for the buffer to spit out the results and see what is there
             Thread.sleep(1000);
 
-            assertNoDroppedFramesResults();
+            assertNoDroppedFramesResults(8);
 
             System.out.println("Test passed (testInOrder)");
         } catch (InterruptedException e) {
