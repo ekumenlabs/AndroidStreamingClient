@@ -30,14 +30,14 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
     private Map<Integer, Long> timestampMap = new HashMap();
 
     // State variables
-    private enum States {
+    private enum State {
         IDLE,       // Just started. Didn't receive any packets yet
         DIRECT,     // No packets out of order pending
         REORDER,    // There are out of order packets waiting to be processed
     }
 
     ;
-    private States currentState;
+    private State currentState;
     private int nextExpectedSequenceNumber;
     private long lastProcessedTimestamp;    // The timestamp of the last packet we were able to successfully
     // send upstream for processing
@@ -47,12 +47,12 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
 
     public RtpMediaBuffer(RtpSessionDataListener upstream) {
         this.upstream = upstream;
-        currentState = States.IDLE;
+        currentState = State.IDLE;
     }
 
     @Override
     public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
-        if (currentState == States.IDLE) {
+        if (currentState == State.IDLE) {
             nextExpectedSequenceNumber = packet.getSequenceNumber();
             timestampDifference = System.currentTimeMillis() - packet.getTimestamp();
 
@@ -60,7 +60,7 @@ public class RtpMediaBuffer implements RtpSessionDataListener {
                 log.info("Stream started. Timestamps: " + timestampDifference);
             }
 
-            currentState = States.DIRECT;
+            currentState = State.DIRECT;
         }
 
         // If the received packet is the one we were expecting: send it for processing
