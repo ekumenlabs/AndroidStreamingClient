@@ -147,8 +147,8 @@ public class RtpMediaBufferTest {
 
         DataPacket receivedPacket;
         int sqnoToPacketShift = 1;
-        for(int i=0;i<numpackets - droppedSequenceNumbers.size();i++) {
-            if(droppedSequenceNumbers.contains(i+sqnoToPacketShift)) {
+        for (int i = 0; i < numpackets - droppedSequenceNumbers.size(); i++) {
+            if (droppedSequenceNumbers.contains(i + sqnoToPacketShift)) {
                 sqnoToPacketShift++;
             }
             // Are the packets in proper order?
@@ -157,7 +157,7 @@ public class RtpMediaBufferTest {
 
             // See if the packets are indeed delayed by the configured delay amount
             sillyAssertLongDifferenceWithThreshold(results.packetList.get(i).receivedTimestamp,
-                    receivedPacket.getTimestamp()/90 + timestampDelta + DELAY, DELAY_ASSERT_THRESHOLD,
+                    receivedPacket.getTimestamp() / 90 + timestampDelta + DELAY, DELAY_ASSERT_THRESHOLD,
                     "packet s#" + receivedPacket.getSequenceNumber() + " at the wrong time");
         }
     }
@@ -167,14 +167,14 @@ public class RtpMediaBufferTest {
         sillyAssertEquals(results.packetList.size(), numpackets, "Packets missing in decoder");
 
         DataPacket receivedPacket;
-        for(int i=0;i<numpackets;i++) {
+        for (int i = 0; i < numpackets; i++) {
             // Are the packets in proper order?
             receivedPacket = results.packetList.get(i).packet;
             sillyAssertEquals(receivedPacket.getSequenceNumber(), i + 1, "packet received out of order");
 
             // See if the packets are indeed delayed by the configured delay amount
             sillyAssertLongDifferenceWithThreshold(results.packetList.get(i).receivedTimestamp,
-                    receivedPacket.getTimestamp()/90 + timestampDelta + DELAY, DELAY_ASSERT_THRESHOLD,
+                    receivedPacket.getTimestamp() / 90 + timestampDelta + DELAY, DELAY_ASSERT_THRESHOLD,
                     "packet s#" + receivedPacket.getSequenceNumber() + " at the wrong time");
         }
     }
@@ -251,19 +251,19 @@ public class RtpMediaBufferTest {
     }
 
     private void sillyAssertTrue(boolean succeed, String message) {
-        if(!succeed) {
+        if (!succeed) {
             throw new RuntimeException("Assert is false: " + message);
         }
     }
 
     private void sillyAssertEquals(Object value, Object expected, String message) {
-        if(value != expected) {
+        if (value != expected) {
             throw new RuntimeException("Assert is not equal: " + message + " (" + value + " vs expected: " + expected + ")");
         }
     }
 
     private void sillyAssertLongDifferenceWithThreshold(long value, long expected, long threshold, String message) {
-        if(Math.abs(value - expected) > threshold) {
+        if (Math.abs(value - expected) > threshold) {
             throw new RuntimeException("Assert difference is larger than threshold: " + message +
                     " (|" + value + " - " + expected + "| = " + Math.abs(value - expected) + " > " + threshold + ")");
         }
@@ -271,7 +271,7 @@ public class RtpMediaBufferTest {
 
     private DataPacket makePacket(long timestampMilliseconds, int sequenceNumber) {
         DataPacket testpacket = new DataPacket();
-        testpacket.setTimestamp(timestampMilliseconds*90);
+        testpacket.setTimestamp(timestampMilliseconds * 90);
         testpacket.setSequenceNumber(sequenceNumber);
         return testpacket;
     }
@@ -292,6 +292,7 @@ public class RtpMediaBufferTest {
     class ReceivedPacket {
         public final DataPacket packet;
         public final long receivedTimestamp;
+
         ReceivedPacket(DataPacket packet, long receivedTimestamp) {
             this.packet = packet;
             this.receivedTimestamp = receivedTimestamp;

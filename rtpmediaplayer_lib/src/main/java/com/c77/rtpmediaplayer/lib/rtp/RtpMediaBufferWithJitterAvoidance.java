@@ -1,7 +1,6 @@
 package com.c77.rtpmediaplayer.lib.rtp;
 
 import com.biasedbit.efflux.packet.DataPacket;
-import com.biasedbit.efflux.participant.RtpParticipant;
 import com.biasedbit.efflux.participant.RtpParticipantInfo;
 import com.biasedbit.efflux.session.RtpSession;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
@@ -100,7 +99,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
     }
 
     private long getConvertedTimestamp(DataPacket packet) {
-        return packet.getTimestamp()/90;
+        return packet.getTimestamp() / 90;
     }
 
     private Frame getFrameForPacket(DataPacket packet) {
@@ -146,7 +145,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
     }
 
     public void stop() {
-        if(dataPacketSenderThread != null) {
+        if (dataPacketSenderThread != null) {
             dataPacketSenderThread.shutdown();
         }
     }
