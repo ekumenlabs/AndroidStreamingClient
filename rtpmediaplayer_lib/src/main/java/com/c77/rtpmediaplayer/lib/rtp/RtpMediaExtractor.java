@@ -133,7 +133,7 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
                 // Did we miss packets in the middle of a frame transition?
                 // In that case, I don't think there's much we can do other than flush our buffer
                 // and discard everything until the next buffer
-                if (packet.getTimestamp() != currentFrame.getSampleTimestamp()) {
+                if (packet.getTimestamp() != currentFrame.getRtpTimestamp()) {
                     if (RtpMediaDecoder.DEBUGGING) {
                         log.warn("Non-consecutive timestamp found");
                     }
@@ -206,7 +206,7 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
         lastSequenceNumberIsValid = true;
     }
 
-    private void startFrame(long timestamp) {
+    private void startFrame(long rtpTimestamp) {
         // Reset error bit
         currentFrameHasError = false;
 
@@ -229,7 +229,7 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
 
         if (!currentFrameHasError) {
             // Set the sample timestamp
-            currentFrame.setSampleTimestamp(timestamp);
+            currentFrame.setRtpTimestamp(rtpTimestamp);
         }
     }
 
