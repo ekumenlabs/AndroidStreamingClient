@@ -29,10 +29,15 @@ public class RtpMediaBufferTest {
     public RtpMediaBufferTest() {
         configuration.setProperty(RtpMediaBufferWithJitterAvoidance.FRAMES_WINDOW_PROPERTY, Integer.toString(DELAY));
 
-        testInOrder();
-        testReorder();
-        testDropMissingPacket();
-        testDropPacketTooOld();
+        try {
+            testInOrder();
+            testReorder();
+            testDropMissingPacket();
+            testDropPacketTooOld();
+        } catch(Throwable t) {
+            t.printStackTrace();
+            System.exit(-1);
+        }
 
         System.out.println("All tests passed!");
     }
@@ -276,7 +281,6 @@ public class RtpMediaBufferTest {
         testpacket.setSequenceNumber(sequenceNumber);
         return testpacket;
     }
-
 
     /**
      * Collects packets at the other end of the buffer
