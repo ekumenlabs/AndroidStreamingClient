@@ -22,7 +22,11 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
 
     private State streamingState;
     private long lastTimestamp;
-    private long startingPoint;
+
+    private long maxTimeCycleTime = 0;
+    private int counter = 0;
+    private long sumTimeCycleTimes = 0;
+
 
     // Stream streamingState
     protected enum State {
@@ -32,8 +36,8 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
     }
 
     private static boolean DEBUGGING = false;
-    private static long SENDING_DELAY = 50;
-    private static long FRAMES_DELAY_MILLISECONDS = 800;
+    private static long SENDING_DELAY = 30;
+    private static long FRAMES_DELAY_MILLISECONDS = 500;
 
     private final RtpSessionDataListener upstream;
     private final DataPacketSenderThread dataPacketSenderThread;
@@ -56,7 +60,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
-        FRAMES_DELAY_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "100"));
+        FRAMES_DELAY_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "800"));
     }
 
     @Override
@@ -66,20 +70,8 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
             this.participant = participant;
             lastTimestamp = getConvertedTimestamp(packet);
 
-            // TODO: use instead of timestamps of frames
-            startingPoint = System.currentTimeMillis() - lastTimestamp;
-
-            streamingState = State.CONFIGURING;
-        } else if (streamingState == State.CONFIGURING && getConvertedTimestamp(packet) != lastTimestamp) {
-            // should make an heuristic. First packet is not necessary the first
-            SENDING_DELAY = Math.abs(getConvertedTimestamp(packet) - lastTimestamp);
-
             downTimestampBound = lastTimestamp - FRAMES_DELAY_MILLISECONDS;
             upTimestampBound = downTimestampBound + SENDING_DELAY;
-
-            if (DEBUGGING) {
-                log.info("Sending delay: " + SENDING_DELAY);
-            }
             streamingState = State.STREAMING;
             dataPacketSenderThread.start();
         }
@@ -96,6 +88,11 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
             Frame frame = getFrameForPacket(packet);
             frames.put(new Long(frame.timestamp), frame);
         }
+    }
+
+    public void logValues() {
+        log.info("Average: " + sumTimeCycleTimes/counter);
+        log.info("Max delay: " + maxTimeCycleTime);
     }
 
     private long getConvertedTimestamp(DataPacket packet) {
@@ -157,8 +154,12 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
         public void run() {
             super.run();
 
+            long timeWhenCycleStarted;
+            long delay;
+
             while (running) {
                 if (RtpMediaBufferWithJitterAvoidance.State.STREAMING == streamingState) {
+                    timeWhenCycleStarted = System.currentTimeMillis();
                     // go through all the frames which timestamp is the range [downTimestampBound,upTimestampBound)
                     SortedMap<Long, Frame> copy = new TreeMap<Long, Frame>();
 
@@ -174,20 +175,16 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
                         if (DEBUGGING) {
                             log.info("Looking for frames between: [" + downTimestampBound + "," + upTimestampBound + ")");
                         }
-                        long timestamp = entry.getKey();
-
-                        if (timestamp < upTimestampBound && timestamp >= downTimestampBound) {
-                            Collection<DataPacket> packets = frame.getPackets();
-                            for (DataPacket packet : packets) {
-                                upstream.dataPacketReceived(session, participant, packet);
-                            }
-
-                            synchronized (frames) {
+                        long timestamp = frame.timestamp;
+                        synchronized (frames) {
+                            if (timestamp < upTimestampBound && timestamp >= downTimestampBound) {
+                                Collection<DataPacket> packets = frame.getPackets();
+                                for (DataPacket packet : packets) {
+                                    upstream.dataPacketReceived(session, participant, packet);
+                                }
                                 frames.remove(entry.getKey());
-                            }
-                        } else if (timestamp < downTimestampBound) {
-                            // remove old packages
-                            synchronized (frames) {
+                            } else if (timestamp < downTimestampBound) {
+                                // remove old packages
                                 frames.remove(entry.getKey());
                             }
                         }
@@ -196,10 +193,22 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
                     try {
                         sleep(SENDING_DELAY);
                         downTimestampBound = upTimestampBound;
-                        upTimestampBound += SENDING_DELAY;
+                        // use actual delay instead of SENDING_DELAY
+                        delay = (System.currentTimeMillis() - timeWhenCycleStarted);
+                        if (DEBUGGING) {
+                            log.info("actual delay: " + delay);
+                            maxTimeCycleTime = Math.max(delay, maxTimeCycleTime);
+                            sumTimeCycleTimes += delay;
+                            counter++;
+                        }
+                        upTimestampBound += delay;
                     } catch (InterruptedException e) {
                         log.error("Error while waiting to send next frame", e);
                     }
+                }
+
+                if (DEBUGGING && counter == 100) {
+                    logValues();
                 }
             }
         }

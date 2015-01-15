@@ -18,7 +18,8 @@ public class RtpMediaBufferTest {
     // Configured delay time for the buffer
     private static final int DELAY = 200;
     // Amount of time to consider acceptable for the buffer to deliver a packet out of its expected time
-    private static final int DELAY_ASSERT_THRESHOLD = 55;
+    private static final int DELAY_ASSERT_THRESHOLD = 15; // tests will fail until we fix the issue
+    // about the time taken by the consuming loop of the RtpMediaBufferWithJitterAvoidance
 
     MockMediaExtractor results;
     Properties configuration = new Properties();
