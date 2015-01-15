@@ -115,7 +115,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
         // Queue the sample to be decoded
         decoder.queueInputBuffer(decodeBuffer.getIndex(), 0,
-                decodeBuffer.getSampleSize(), decodeBuffer.getSampleTimestamp(), 0);
+                decodeBuffer.getSampleSize(), decodeBuffer.getPresentationTimeUs(), 0);
 
         // Read the decoded output
         int outIndex = decoder.dequeueOutputBuffer(info, 10000);
