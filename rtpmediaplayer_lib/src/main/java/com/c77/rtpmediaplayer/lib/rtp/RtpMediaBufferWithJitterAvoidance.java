@@ -10,8 +10,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.Collection;
 import java.util.Properties;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Created by ashi on 1/13/15.
@@ -42,7 +41,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
     private final RtpSessionDataListener upstream;
     private final DataPacketSenderThread dataPacketSenderThread;
     // frames sorted by their timestamp
-    SortedMap<Long, Frame> frames = new TreeMap<Long, Frame>();
+    ConcurrentSkipListMap<Long, Frame> frames = new ConcurrentSkipListMap<Long, Frame>();
     private Log log = LogFactory.getLog(RtpMediaBufferWithJitterAvoidance.class);
     private long downTimestampBound;
     private long upTimestampBound;
@@ -84,10 +83,8 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
             return;
         }
 
-        synchronized (frames) {
-            Frame frame = getFrameForPacket(packet);
-            frames.put(new Long(frame.timestamp), frame);
-        }
+        Frame frame = getFrameForPacket(packet);
+        frames.put(new Long(frame.timestamp), frame);
     }
 
     public void logValues() {
@@ -119,7 +116,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
         private final long timestamp;
 
         // packets sorted by their sequence number
-        SortedMap<Integer, DataPacket> packets;
+        ConcurrentSkipListMap<Integer, DataPacket> packets;
 
         /**
          * Create a frame from a packet
@@ -127,7 +124,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
          * @param packet
          */
         public Frame(DataPacket packet) {
-            packets = new TreeMap<Integer, DataPacket>();
+            packets = new ConcurrentSkipListMap<Integer, DataPacket>();
             timestamp = getConvertedTimestamp(packet);
             packets.put(new Integer(packet.getSequenceNumber()), packet);
         }
@@ -161,32 +158,22 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
                 if (RtpMediaBufferWithJitterAvoidance.State.STREAMING == streamingState) {
                     timeWhenCycleStarted = System.currentTimeMillis();
                     // go through all the frames which timestamp is the range [downTimestampBound,upTimestampBound)
-                    SortedMap<Long, Frame> copy = new TreeMap<Long, Frame>();
 
-                    synchronized (frames) {
-                        if (DEBUGGING) {
-                            log.info("Copying #" + frames.size() + " frames");
-                        }
-                        copy.putAll(frames);
-                    }
-
-                    for (SortedMap.Entry<Long, Frame> entry : copy.entrySet()) {
+                    for (ConcurrentSkipListMap.Entry<Long, Frame> entry : frames.entrySet()) {
                         Frame frame = entry.getValue();
                         if (DEBUGGING) {
                             log.info("Looking for frames between: [" + downTimestampBound + "," + upTimestampBound + ")");
                         }
                         long timestamp = frame.timestamp;
-                        synchronized (frames) {
-                            if (timestamp < upTimestampBound && timestamp >= downTimestampBound) {
-                                Collection<DataPacket> packets = frame.getPackets();
-                                for (DataPacket packet : packets) {
-                                    upstream.dataPacketReceived(session, participant, packet);
-                                }
-                                frames.remove(entry.getKey());
-                            } else if (timestamp < downTimestampBound) {
-                                // remove old packages
-                                frames.remove(entry.getKey());
+                        if (timestamp < upTimestampBound && timestamp >= downTimestampBound) {
+                            Collection<DataPacket> packets = frame.getPackets();
+                            for (DataPacket packet : packets) {
+                                upstream.dataPacketReceived(session, participant, packet);
                             }
+                            frames.remove(entry.getKey());
+                        } else if (timestamp < downTimestampBound) {
+                            // remove old packages
+                            frames.remove(entry.getKey());
                         }
                     }
 
@@ -208,6 +195,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
                 }
 
                 if (DEBUGGING && counter == 100) {
+                    log.info(counter);
                     logValues();
                 }
             }
