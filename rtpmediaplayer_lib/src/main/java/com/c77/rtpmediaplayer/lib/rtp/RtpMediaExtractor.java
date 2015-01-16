@@ -79,7 +79,11 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
             }
             // Send the buffer upstream for processing
 
-            startFrame(packet.getTimestamp());
+            try {
+                startFrame(packet.getTimestamp());
+            } catch (Exception e) {
+                log.error("Error while trying to start frame", e);
+            }
             if (currentFrame != null) {
 
                 if (useByteStreamFormat) {
@@ -105,9 +109,14 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
                     log.info("FU-A start found. Starting new frame");
                 }
 
-                startFrame(packet.getTimestamp());
+                try {
+                    startFrame(packet.getTimestamp());
+                } catch (Exception e) {
+                    log.error("Error while trying to start frame", e);
+                }
 
-                if (currentFrame != null) {
+
+            if (currentFrame != null) {
                     // Add stream header
                     if (useByteStreamFormat) {
                         currentFrame.getBuffer().put(byteStreamStartCodePrefix);
@@ -185,7 +194,11 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
                 buffer.readBytes(nalUnitData);
 
                 // Create and send the buffer upstream for processing
-                startFrame(packet.getTimestamp());
+                try {
+                    startFrame(packet.getTimestamp());
+                } catch (Exception e) {
+                    log.error("Error while trying to start frame", e);
+                }
 
                 if (currentFrame != null) {
                     if (useByteStreamFormat) {
@@ -206,7 +219,7 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
         lastSequenceNumberIsValid = true;
     }
 
-    private void startFrame(long rtpTimestamp) {
+    private void startFrame(long rtpTimestamp) throws Exception {
         // Reset error bit
         currentFrameHasError = false;
 
@@ -236,7 +249,11 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
     private void sendFrame() {
         currentFrame.setSampleSize(currentFrame.getBuffer().position());
         currentFrame.getBuffer().flip();
-        decoder.decodeFrame(currentFrame);
+        try {
+            decoder.decodeFrame(currentFrame);
+        } catch (Exception e) {
+            log.error("Error sending frame", e);
+        }
 
         // Always make currentFrame null to indicate we have returned the buffer to the codec
         currentFrame = null;
