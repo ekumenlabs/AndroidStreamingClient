@@ -35,7 +35,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
     }
 
     private static boolean DEBUGGING = false;
-    private static long SENDING_DELAY = 30;
+    private static long SENDING_DELAY = 20;
     private static long FRAMES_DELAY_MILLISECONDS = 500;
 
     private final RtpSessionDataListener upstream;
@@ -153,6 +153,9 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
 
             long timeWhenCycleStarted;
             long delay;
+            maxTimeCycleTime = 0;
+            counter = 0;
+            sumTimeCycleTimes = 0;
 
             while (running) {
                 if (RtpMediaBufferWithJitterAvoidance.State.STREAMING == streamingState) {
@@ -165,29 +168,38 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
                             log.info("Looking for frames between: [" + downTimestampBound + "," + upTimestampBound + ")");
                         }
                         long timestamp = frame.timestamp;
-                        if (timestamp < upTimestampBound && timestamp >= downTimestampBound) {
+
+                        if (timestamp < downTimestampBound) {
+                            // remove old packages
+                            frames.remove(entry.getKey());
+                        } else if (timestamp < upTimestampBound) {
                             Collection<DataPacket> packets = frame.getPackets();
                             for (DataPacket packet : packets) {
-                                upstream.dataPacketReceived(session, participant, packet);
+                                try {
+                                    upstream.dataPacketReceived(session, participant, packet);
+                                } catch (Exception e) {
+                                    log.error("Error while trying to pass packet to upstream", e);
+                                }
                             }
-                            frames.remove(entry.getKey());
-                        } else if (timestamp < downTimestampBound) {
-                            // remove old packages
                             frames.remove(entry.getKey());
                         }
                     }
 
                     try {
-                        sleep(SENDING_DELAY);
-                        downTimestampBound = upTimestampBound;
-                        // use actual delay instead of SENDING_DELAY
                         delay = (System.currentTimeMillis() - timeWhenCycleStarted);
+
                         if (DEBUGGING) {
-                            log.info("actual delay: " + delay);
                             maxTimeCycleTime = Math.max(delay, maxTimeCycleTime);
                             sumTimeCycleTimes += delay;
                             counter++;
                         }
+
+                        sleep(SENDING_DELAY);
+                        downTimestampBound = upTimestampBound;
+
+                        delay = (System.currentTimeMillis() - timeWhenCycleStarted);
+
+                        // use actual delay instead of SENDING_DELAY
                         upTimestampBound += delay;
                     } catch (InterruptedException e) {
                         log.error("Error while waiting to send next frame", e);

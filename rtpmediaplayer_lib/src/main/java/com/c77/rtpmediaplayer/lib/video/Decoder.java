@@ -13,5 +13,5 @@ public interface Decoder {
     public BufferedSample getSampleBuffer() throws RtpPlayerException;
 
     // Returns a new frame to be decoded
-    public void decodeFrame(BufferedSample frame);
+    public void decodeFrame(BufferedSample frame) throws Exception;
 }

@@ -107,7 +107,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     }
 
     @Override
-    public void decodeFrame(BufferedSample decodeBuffer) {
+    public void decodeFrame(BufferedSample decodeBuffer) throws Exception {
         if (DEBUGGING) {
             // Dump buffer to logcat
             log.info(decodeBuffer.toString());
