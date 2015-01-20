@@ -26,7 +26,6 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
     private int counter = 0;
     private long sumTimeCycleTimes = 0;
 
-
     // Stream streamingState
     protected enum State {
         IDLE,       // Just started. Didn't receive any packets yet
@@ -136,6 +135,38 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
         public java.util.Collection<DataPacket> getPackets() {
             return packets.values();
         }
+
+        // check whether the frame is completed
+        public boolean isCompleted() {
+            byte nalUnitOctet;
+            byte nalType;
+            boolean fuEnd;
+            byte fuHeader;
+
+            for (DataPacket packet : packets.values()) {
+                nalUnitOctet = packet.getData().getByte(0);
+                nalType = (byte) (nalUnitOctet & 0x1F);
+
+                if (nalType > 0 && nalType < 24) {
+                    if (DEBUGGING) {
+                        log.info("NAL: full packet");
+                    }
+                    return true;
+                } else if (nalType == 28) {
+                    fuHeader = packet.getData().getByte(1);
+
+                    fuEnd = ((fuHeader & 0x40) != 0);
+
+                    if (fuEnd) {
+                        if (DEBUGGING) {
+                            log.info("FU-A end found. Sending frame!");
+                        }
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
     }
 
     public void stop() {
@@ -164,12 +195,15 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
 
                     for (ConcurrentSkipListMap.Entry<Long, Frame> entry : frames.entrySet()) {
                         Frame frame = entry.getValue();
+
                         if (DEBUGGING) {
                             log.info("Looking for frames between: [" + downTimestampBound + "," + upTimestampBound + ")");
                         }
                         long timestamp = frame.timestamp;
 
-                        if (timestamp < downTimestampBound) {
+                        log.info("Completed? " + frame.isCompleted());
+                        // check whether the frame is too old or it is incomplete
+                        if (timestamp < downTimestampBound || !frame.isCompleted()) {
                             // remove old packages
                             frames.remove(entry.getKey());
                         } else if (timestamp < upTimestampBound) {
