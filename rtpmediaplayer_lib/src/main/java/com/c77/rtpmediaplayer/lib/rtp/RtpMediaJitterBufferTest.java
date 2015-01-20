@@ -14,20 +14,20 @@ import java.util.Set;
 /**
  * Created by julian on 1/14/15.
  */
-public class RtpMediaBufferTest {
+public class RtpMediaJitterBufferTest {
     // Configured delay time for the buffer
     private static final int DELAY = 200;
     // Amount of time to consider acceptable for the buffer to deliver a packet out of its expected time
     private static final int DELAY_ASSERT_THRESHOLD = 20; // tests will fail until we fix the issue
-    // about the time taken by the consuming loop of the RtpMediaBufferWithJitterAvoidance
+    // about the time taken by the consuming loop of the RtpMediaJitterBuffer
 
     MockMediaExtractor results;
     Properties configuration = new Properties();
-    RtpMediaBufferWithJitterAvoidance test;
+    RtpMediaJitterBuffer test;
     private long timestampDelta;
 
-    public RtpMediaBufferTest() {
-        configuration.setProperty(RtpMediaBufferWithJitterAvoidance.FRAMES_WINDOW_PROPERTY, Integer.toString(DELAY));
+    public RtpMediaJitterBufferTest() {
+        configuration.setProperty(RtpMediaJitterBuffer.FRAMES_WINDOW_PROPERTY, Integer.toString(DELAY));
 
         try {
             testInOrder();
@@ -44,7 +44,7 @@ public class RtpMediaBufferTest {
 
     private void testDropPacketTooOld() {
         results = new MockMediaExtractor();
-        test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
+        test = new RtpMediaJitterBuffer(results, configuration);
 
         try {
             // Feed a packet stream in order
@@ -98,7 +98,7 @@ public class RtpMediaBufferTest {
 
     private void testDropMissingPacket() {
         results = new MockMediaExtractor();
-        test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
+        test = new RtpMediaJitterBuffer(results, configuration);
 
         try {
             // Feed a packet stream in order
@@ -187,7 +187,7 @@ public class RtpMediaBufferTest {
 
     public void testReorder() {
         results = new MockMediaExtractor();
-        test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
+        test = new RtpMediaJitterBuffer(results, configuration);
 
         try {
             // Feed a packet stream in order
@@ -222,7 +222,7 @@ public class RtpMediaBufferTest {
 
     public void testInOrder() {
         results = new MockMediaExtractor();
-        test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
+        test = new RtpMediaJitterBuffer(results, configuration);
 
         try {
             // Feed a packet stream in order
@@ -309,6 +309,6 @@ public class RtpMediaBufferTest {
      * TODO: Replace with JUnit or another more proper test framework
      */
     public static void main(String argv[]) {
-        new RtpMediaBufferTest();
+        new RtpMediaJitterBufferTest();
     }
 }
