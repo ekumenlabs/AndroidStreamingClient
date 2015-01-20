@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 /**
  * Created by ashi on 1/13/15.
  */
-public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener {
+public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
     public static final String DEBUGGING_PROPERTY = "DEBUGGING";
     public static final java.lang.String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW";
 
@@ -138,6 +138,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
         }
     }
 
+    @Override
     public void stop() {
         if (dataPacketSenderThread != null) {
             dataPacketSenderThread.shutdown();
