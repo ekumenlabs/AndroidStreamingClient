@@ -23,7 +23,7 @@ public class RtpMediaBufferTest {
 
     MockMediaExtractor results;
     Properties configuration = new Properties();
-    RtpMediaBufferWithJitterAvoidance test;
+    RtpMediaBuffer test;
     private long timestampDelta;
 
     public RtpMediaBufferTest() {
