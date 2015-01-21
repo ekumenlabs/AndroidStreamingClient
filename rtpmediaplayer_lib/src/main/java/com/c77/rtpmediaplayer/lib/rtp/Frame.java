@@ -38,9 +38,6 @@ public class Frame {
 
     // check whether the frame is completed
     public boolean isCompleted() {
-        boolean fuEnd;
-        boolean fuStart;
-        byte fuHeader;
         int startSeqNum = -1;
         DataPacketWithNalType packet = null;
         for (ConcurrentSkipListMap.Entry<Integer, DataPacketWithNalType> entry : packets.entrySet()) {

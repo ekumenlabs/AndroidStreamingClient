@@ -20,7 +20,6 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
     private State streamingState;
     private long lastTimestamp;
 
-    ConcurrentSkipListMap.Entry<Long, Frame> prevFrameEntry;
     ConcurrentSkipListMap.Entry<Long, Frame> currentFrameEntry;
 
     protected enum State {
@@ -55,7 +54,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpSessionDataListener
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
-        FRAMES_DELAY_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "120"));
+        FRAMES_DELAY_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "132"));
     }
 
     @Override
