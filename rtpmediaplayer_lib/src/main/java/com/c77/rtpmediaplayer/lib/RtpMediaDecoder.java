@@ -101,7 +101,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     @Override
     public BufferedSample getSampleBuffer() throws RtpPlayerException {
-        int inIndex = decoder.dequeueInputBuffer(0);
+        int inIndex = decoder.dequeueInputBuffer(-1);
         if (inIndex < 0) {
             throw new RtpPlayerException("Didn't get a buffer from the MediaCodec");
         }

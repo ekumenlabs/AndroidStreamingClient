@@ -22,6 +22,12 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
 
     ConcurrentSkipListMap.Entry<Long, Frame> currentFrameEntry;
 
+    // debugging variables
+    int totalFrames = 0;
+    int framesSent = 0;
+    int totalLoops = 0;
+    int tooMuchTimeLoops = 0;
+
     protected enum State {
         IDLE,       // Just started. Didn't receive any packets yet
         WAITING,    // Wait until there are enough frames
@@ -29,10 +35,8 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
     }
 
     private static boolean DEBUGGING = false;
-    private static long SENDING_DELAY = 25;
-    private static long FRAMES_DELAY_MILLISECONDS = 132;
-    // time that takes a frame to arrive
-    private static final int FRAME_DELAY = 33;
+    private static long SENDING_DELAY = 28;
+    private static int FRAMES = 50;
 
     private final RtpSessionDataListener upstream;
     private final DataPacketSenderThread dataPacketSenderThread;
@@ -54,7 +58,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
-        FRAMES_DELAY_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "132"));
+        FRAMES = Integer.parseInt(properties.getProperty(FRAMES_WINDOW_PROPERTY, "50"));
     }
 
     @Override
@@ -72,9 +76,9 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
         }
 
         // discard packets that are too late
-        if (State.STREAMING == streamingState && getConvertedTimestamp(packet) < lastTimestamp - FRAMES_DELAY_MILLISECONDS) {
-            if (true) {
-                log.info("Discarded getPacket with timestamp " + getConvertedTimestamp(packet));
+        if (State.STREAMING == streamingState && getConvertedTimestamp(packet) < lastTimestamp) {
+            if (DEBUGGING) {
+                log.info("Discarded getPacket with timestamp " + getConvertedTimestamp(packet) + ", buffer size: " + frames.size());
             }
             return;
         }
@@ -83,7 +87,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
         frames.put(new Long(frame.timestamp()), frame);
 
         // wait to have k frames to start streaming
-        if (streamingState == State.WAITING && frames.size() >= FRAMES_DELAY_MILLISECONDS / FRAME_DELAY) {
+        if (streamingState == State.WAITING && frames.size() >= FRAMES) {
             log.info("Start consuming!");
             streamingState = State.STREAMING;
             dataPacketSenderThread.start();
@@ -110,7 +114,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
         return frame;
     }
 
-    @Override   
+    @Override
     public void stop() {
         if (dataPacketSenderThread != null) {
             dataPacketSenderThread.shutdown();
@@ -136,22 +140,33 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
 
                 if (currentFrameEntry != null) {
                     frame = currentFrameEntry.getValue();
+
+                    totalFrames++;
                     if (frame.isCompleted()) {
                         sendFrame(frame);
+                        framesSent++;
                     } else if (DEBUGGING) {
                         log.info("Discarded frame. It was not completed.");
                     }
+
+                    // update timestamp of last frame sent or should have been sent
+                    lastTimestamp = frame.timestamp();
 
                     frames.remove(currentFrameEntry.getKey());
                 }
 
                 waitForNextFrame();
+
+                if (DEBUGGING) {
+                    if (totalFrames % 100 == 0) {
+                        log.info("Total Frames: " + totalFrames + " - Sent Ones: " + framesSent + " - ratio: " + framesSent / (float) totalFrames);
+                        log.info("Total Loops: " + totalLoops + " - Too late ones: " + tooMuchTimeLoops);
+                    }
+                }
             }
         }
 
         private void sendFrame(Frame frame) {
-            // update timestamp of last frame sent
-            lastTimestamp = frame.timestamp();
 
             for (DataPacketWithNalType packet : frame.getPackets()) {
                 switch (packet.nalType()) {
@@ -160,6 +175,9 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
                         break;
                     case NOT_FULL:
                         ((RtpMediaExtractor) upstream).startAndSendFragmentedFrame(packet);
+                        break;
+                    case STAPA:
+                        ((RtpMediaExtractor) upstream).startSTAPAFrame(packet.getPacket());
                         break;
                 }
             }
@@ -170,6 +188,11 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
                 delay = (System.currentTimeMillis() - timeWhenCycleStarted);
 
                 long actualDelay = Math.max(SENDING_DELAY - delay, 0);
+
+                if (actualDelay == 0) {
+                    tooMuchTimeLoops++;
+                }
+                totalLoops++;
 
                 sleep(actualDelay);
             } catch (InterruptedException e) {

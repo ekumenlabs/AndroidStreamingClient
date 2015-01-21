@@ -64,6 +64,8 @@ public class Frame {
                         return startSeqNum != -1 && (packet.getSequenceNumber() - startSeqNum + 1 == packets.size());
                     }
                     break;
+                case STAPA:
+                    return true;
             }
         }
         return false;

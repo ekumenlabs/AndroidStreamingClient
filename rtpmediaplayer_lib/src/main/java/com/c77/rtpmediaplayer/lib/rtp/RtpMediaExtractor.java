@@ -48,6 +48,39 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
         this.decoder = decoder;
     }
 
+    public void startSTAPAFrame(DataPacket packet) {
+        // This frame type includes a series of concatenated NAL units, each preceded
+        // by a 16-bit size field
+
+        // We'll use the reader index in this parsing routine
+        ChannelBuffer buffer = packet.getData();
+        // Discard the first byte (RTP getPacket type / nalType came from there)
+        buffer.readByte();
+
+        while (buffer.readable()) {
+            // NAL Unit Size
+            short nalUnitSize = buffer.readShort();
+
+            // NAL Unit Data (of the size read above)
+            byte[] nalUnitData = new byte[nalUnitSize];
+            buffer.readBytes(nalUnitData);
+
+            // Create and send the buffer upstream for processing
+            try {
+                startFrame(packet.getTimestamp());
+            } catch (Exception e) {
+                log.error("Error while trying to start frame", e);
+            }
+
+            if (currentFrame != null) {
+                if (useByteStreamFormat) {
+                    currentFrame.getBuffer().put(byteStreamStartCodePrefix);
+                }
+                currentFrame.getBuffer().put(nalUnitData);
+                sendFrame();
+            }
+        }
+    }
     public void startAndSendFrame(DataPacket packet) {
         try {
             startFrame(packet.getTimestamp());
@@ -105,7 +138,6 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
                 }
             }
         }
-
     }
 
     @Override
@@ -135,7 +167,7 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
         // If it's a single NAL getPacket then the entire payload is here
         if (nalType > 0 && nalType < 24) {
             if (RtpMediaDecoder.DEBUGGING) {
-                log.info("NAL: full getPacket");
+                log.info("NAL: full packet");
             }
             // Send the buffer upstream for processing
 
@@ -462,7 +494,6 @@ public class RtpMediaExtractor implements RtpSessionDataListener {
                 // Get buffer from decoder
                 currentFrame = decoder.getSampleBuffer();
                 currentFrame.getBuffer().clear();
-
             } catch (RtpPlayerException e) {
                 // TODO: Proper error handling
                 currentFrameHasError = true;

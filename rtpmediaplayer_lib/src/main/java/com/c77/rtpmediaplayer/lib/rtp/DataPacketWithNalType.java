@@ -11,7 +11,8 @@ public class DataPacketWithNalType {
     public enum NalType {
         FULL,
         NOT_FULL,
-        NalType, UNKNOWN
+        STAPA,
+        UNKNOWN
     }
 
     private DataPacket packet;
@@ -33,8 +34,8 @@ public class DataPacketWithNalType {
             this.nalType = NalType.FULL;
         } else if (nalTypeByte == 28) {
             this.nalType = NalType.NOT_FULL;
-        } else {
-            this.nalType = NalType.UNKNOWN;
+        } else if (nalTypeByte == 24) {
+            this.nalType = NalType.STAPA;
         }
 
         byte fuHeader = packet.getData().getByte(1);
