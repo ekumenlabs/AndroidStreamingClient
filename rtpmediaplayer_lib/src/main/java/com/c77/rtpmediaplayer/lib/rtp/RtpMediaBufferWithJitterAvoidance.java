@@ -3,7 +3,6 @@ package com.c77.rtpmediaplayer.lib.rtp;
 import com.biasedbit.efflux.packet.DataPacket;
 import com.biasedbit.efflux.participant.RtpParticipantInfo;
 import com.biasedbit.efflux.session.RtpSession;
-import com.biasedbit.efflux.session.RtpSessionDataListener;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,7 +37,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
     private static long SENDING_DELAY = 28;
     private static int FRAMES = 50;
 
-    private final RtpSessionDataListener upstream;
+    private final RtpMediaExtractor rtpMediaExtractor;
     private final DataPacketSenderThread dataPacketSenderThread;
     // frames sorted by their timestamp
     ConcurrentSkipListMap<Long, Frame> frames = new ConcurrentSkipListMap<Long, Frame>();
@@ -47,14 +46,14 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
     RtpSession session;
     RtpParticipantInfo participant;
 
-    public RtpMediaBufferWithJitterAvoidance(RtpSessionDataListener upstream) {
-        this.upstream = upstream;
+    public RtpMediaBufferWithJitterAvoidance(RtpMediaExtractor rtpMediaExtractor) {
+        this.rtpMediaExtractor = rtpMediaExtractor;
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
     }
 
-    public RtpMediaBufferWithJitterAvoidance(RtpSessionDataListener upstream, Properties properties) {
-        this.upstream = upstream;
+    public RtpMediaBufferWithJitterAvoidance(RtpMediaExtractor rtpMediaExtractor, Properties properties) {
+        this.rtpMediaExtractor = rtpMediaExtractor;
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
@@ -169,17 +168,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
         private void sendFrame(Frame frame) {
 
             for (DataPacketWithNalType packet : frame.getPackets()) {
-                switch (packet.nalType()) {
-                    case FULL:
-                        ((RtpMediaExtractor) upstream).startAndSendFrame(packet.getPacket());
-                        break;
-                    case NOT_FULL:
-                        ((RtpMediaExtractor) upstream).startAndSendFragmentedFrame(packet);
-                        break;
-                    case STAPA:
-                        ((RtpMediaExtractor) upstream).startSTAPAFrame(packet.getPacket());
-                        break;
-                }
+                rtpMediaExtractor.sendPacket(packet);
             }
         }
 
