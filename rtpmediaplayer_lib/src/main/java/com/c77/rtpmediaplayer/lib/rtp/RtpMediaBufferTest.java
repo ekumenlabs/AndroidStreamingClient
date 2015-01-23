@@ -4,6 +4,7 @@ import com.biasedbit.efflux.packet.DataPacket;
 import com.biasedbit.efflux.participant.RtpParticipantInfo;
 import com.biasedbit.efflux.session.RtpSession;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
+import com.c77.rtpmediaplayer.lib.video.Decoder;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -43,7 +44,7 @@ public class RtpMediaBufferTest {
     }
 
     private void testDropPacketTooOld() {
-        results = new MockMediaExtractor();
+        results = new MockMediaExtractor(null);
         test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
 
         try {
@@ -97,7 +98,7 @@ public class RtpMediaBufferTest {
     }
 
     private void testDropMissingPacket() {
-        results = new MockMediaExtractor();
+        results = new MockMediaExtractor(null);
         test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
 
         try {
@@ -186,7 +187,7 @@ public class RtpMediaBufferTest {
     }
 
     public void testReorder() {
-        results = new MockMediaExtractor();
+        results = new MockMediaExtractor(null);
         test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
 
         try {
@@ -221,7 +222,7 @@ public class RtpMediaBufferTest {
     }
 
     public void testInOrder() {
-        results = new MockMediaExtractor();
+        results = new MockMediaExtractor(null);
         test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
 
         try {
@@ -278,6 +279,7 @@ public class RtpMediaBufferTest {
     private DataPacket makePacket(long timestampMilliseconds, int sequenceNumber) {
         DataPacket testpacket = new DataPacket();
         testpacket.setTimestamp(timestampMilliseconds * 90);
+        testpacket.setData(new byte[2]);
         testpacket.setSequenceNumber(sequenceNumber);
         return testpacket;
     }
@@ -285,12 +287,16 @@ public class RtpMediaBufferTest {
     /**
      * Collects packets at the other end of the buffer
      */
-    class MockMediaExtractor implements RtpSessionDataListener {
+    class MockMediaExtractor extends RtpMediaExtractor {
         List<ReceivedPacket> packetList = new ArrayList<ReceivedPacket>();
 
+        public MockMediaExtractor(Decoder decoder) {
+            super(decoder);
+        }
+
         @Override
-        public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
-            packetList.add(new ReceivedPacket(packet, System.currentTimeMillis()));
+        public void sendPacket(DataPacketWithNalType packet) {
+            packetList.add(new ReceivedPacket(packet.getPacket(), System.currentTimeMillis()));
         }
     }
 

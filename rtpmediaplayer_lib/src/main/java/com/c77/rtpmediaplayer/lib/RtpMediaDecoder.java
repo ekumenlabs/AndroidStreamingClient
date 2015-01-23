@@ -8,8 +8,8 @@ import android.view.SurfaceView;
 
 import com.biasedbit.efflux.participant.RtpParticipant;
 import com.biasedbit.efflux.session.AbstractRtpSession;
-import com.biasedbit.efflux.session.RtpSessionDataListener;
 import com.biasedbit.efflux.session.SingleParticipantSession;
+import com.c77.rtpmediaplayer.lib.rtp.BufferDelayTracer;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaBuffer;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaBufferWithJitterAvoidance;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaExtractor;
@@ -18,6 +18,7 @@ import com.c77.rtpmediaplayer.lib.video.Decoder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Properties;
 
@@ -42,12 +43,18 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     private Log log = LogFactory.getLog(RtpMediaDecoder.class);
 
     private final Properties configuration;
+    // If this stream is set, use it to trace packet arrival times
+    private OutputStream traceOuputStream = null;
 
     public RtpMediaDecoder(SurfaceView surfaceView) {
         this.surfaceView = surfaceView;
         surfaceView.getHolder().addCallback(this);
         DEBUGGING = false;
         configuration = new Properties();
+    }
+
+    public void setTraceOuputStream(OutputStream out) {
+        traceOuputStream = out;
     }
 
     /**
@@ -101,7 +108,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     @Override
     public BufferedSample getSampleBuffer() throws RtpPlayerException {
-        int inIndex = decoder.dequeueInputBuffer(0);
+        int inIndex = decoder.dequeueInputBuffer(-1);
         if (inIndex < 0) {
             throw new RtpPlayerException("Didn't get a buffer from the MediaCodec");
         }
@@ -211,6 +218,10 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             RtpParticipant remoteParticipant = RtpParticipant.createReceiver("10.34.0.10", 4556, 4557);
             session = new SingleParticipantSession("1", 96, participant, remoteParticipant);
 
+            // Optionally trace to file
+            if (traceOuputStream != null) {
+                session.addDataListener(new BufferDelayTracer(traceOuputStream));
+            }
             RtpMediaBuffer buffer = new RtpMediaBufferWithJitterAvoidance(rtpMediaExtractor);
             session.addDataListener(buffer);
 
