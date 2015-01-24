@@ -3,7 +3,7 @@ package com.c77.rtpmediaplayer.example;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.Environment;
 import android.view.SurfaceView;
 import android.view.View;
 
@@ -12,6 +12,8 @@ import com.c77.rtpmediaplayer.lib.RtpMediaDecoder;
 import java.io.FileNotFoundException;
 import java.io.IOError;
 import java.io.OutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 
 public class DecoderMainActivity extends Activity implements View.OnClickListener {
 
@@ -39,6 +41,19 @@ public class DecoderMainActivity extends Activity implements View.OnClickListene
         }
 
         rtpMediaDecoder.DEBUGGING = false;
+
+        // Try to trace
+        OutputStream out;
+        try {
+            File file = new File(Environment.getExternalStorageDirectory()
+                    + File.separator + "example.txt");
+            file.createNewFile();
+            out = new FileOutputStream(file);
+            rtpMediaDecoder.setTraceOuputStream(out);
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+
         rtpMediaDecoder.start();
 
         surfaceView.setOnClickListener(this);

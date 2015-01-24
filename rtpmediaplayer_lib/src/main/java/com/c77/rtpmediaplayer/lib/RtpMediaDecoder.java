@@ -8,7 +8,6 @@ import android.view.SurfaceView;
 
 import com.biasedbit.efflux.participant.RtpParticipant;
 import com.biasedbit.efflux.session.AbstractRtpSession;
-import com.biasedbit.efflux.session.RtpSessionDataListener;
 import com.biasedbit.efflux.session.SingleParticipantSession;
 import com.c77.rtpmediaplayer.lib.rtp.BufferDelayTracer;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaBuffer;
@@ -44,6 +43,8 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     private Log log = LogFactory.getLog(RtpMediaDecoder.class);
 
     private final Properties configuration;
+    // If this stream is set, use it to trace packet arrival times
+    private OutputStream traceOuputStream = null;
 
     // If this stream is set, use it to trace packet arrival times
     private OutputStream traceOuputStream = null;
@@ -53,6 +54,10 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         surfaceView.getHolder().addCallback(this);
         DEBUGGING = false;
         configuration = new Properties();
+    }
+
+    public void setTraceOuputStream(OutputStream out) {
+        traceOuputStream = out;
     }
 
     /**
@@ -106,7 +111,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     @Override
     public BufferedSample getSampleBuffer() throws RtpPlayerException {
-        int inIndex = decoder.dequeueInputBuffer(0);
+        int inIndex = decoder.dequeueInputBuffer(-1);
         if (inIndex < 0) {
             throw new RtpPlayerException("Didn't get a buffer from the MediaCodec");
         }
