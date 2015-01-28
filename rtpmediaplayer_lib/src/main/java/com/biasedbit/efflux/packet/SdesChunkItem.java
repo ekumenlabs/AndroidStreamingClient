@@ -58,7 +58,7 @@ public class SdesChunkItem {
 
         if (valueBytes.length > 255) {
             throw new IllegalArgumentException("Content (text) can be no longer than 255 bytes and this has " +
-                                               valueBytes.length);
+                    valueBytes.length);
         }
 
         // Type (1b), length (1b), value (xb)
@@ -121,16 +121,26 @@ public class SdesChunkItem {
 
         public static Type fromByte(byte b) {
             switch (b) {
-                case 0: return NULL;
-                case 1: return CNAME;
-                case 2: return NAME;
-                case 3: return EMAIL;
-                case 4: return PHONE;
-                case 5: return LOCATION;
-                case 6: return TOOL;
-                case 7: return NOTE;
-                case 8: return PRIV;
-                default: throw new IllegalArgumentException("Unknown SSRC Chunk Item type: " + b);
+                case 0:
+                    return NULL;
+                case 1:
+                    return CNAME;
+                case 2:
+                    return NAME;
+                case 3:
+                    return EMAIL;
+                case 4:
+                    return PHONE;
+                case 5:
+                    return LOCATION;
+                case 6:
+                    return TOOL;
+                case 7:
+                    return NOTE;
+                case 8:
+                    return PRIV;
+                default:
+                    throw new IllegalArgumentException("Unknown SSRC Chunk Item type: " + b);
             }
         }
 

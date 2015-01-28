@@ -60,7 +60,7 @@ public class SdesChunkPrivItem extends SdesChunkItem {
 
         if ((prefixBytes.length + valueBytes.length) > 254) {
             throw new IllegalArgumentException("Content (prefix + text) can be no longer than 255 bytes and this has " +
-                                               valueBytes.length);
+                    valueBytes.length);
         }
 
         // Type (1b), total item length (1b), prefix length (1b), prefix (xb), text (xb)

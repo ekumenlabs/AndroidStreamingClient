@@ -32,7 +32,7 @@ public class RtpMediaBufferTest {
             testReorder();
             testDropMissingPacket();
             testDropPacketTooOld();
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             t.printStackTrace();
             System.exit(-1);
         }

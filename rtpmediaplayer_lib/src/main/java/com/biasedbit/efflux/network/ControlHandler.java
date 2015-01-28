@@ -18,6 +18,7 @@ package com.biasedbit.efflux.network;
 
 import com.biasedbit.efflux.logging.Logger;
 import com.biasedbit.efflux.packet.CompoundControlPacket;
+
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
@@ -60,7 +61,7 @@ public class ControlHandler extends SimpleChannelUpstreamHandler {
         // Just log and proceed...
         LOG.error("Caught exception on channel {}.", e.getCause(), e.getChannel());
     }
-    
+
     // public methods -------------------------------------------------------------------------------------------------
 
     public int getPacketsReceived() {

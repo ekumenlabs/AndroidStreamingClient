@@ -3,18 +3,14 @@ package com.c77.rtpmediaplayer.example;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.SurfaceView;
 import android.view.View;
 
 import com.c77.rtpmediaplayer.lib.RtpMediaDecoder;
 
 import java.io.FileNotFoundException;
-import java.io.IOError;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.util.Properties;
 
 public class DecoderMainActivity extends Activity implements View.OnClickListener {

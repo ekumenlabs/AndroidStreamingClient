@@ -1,7 +1,5 @@
 package com.c77.rtpmediaplayer.lib.rtp;
 
-import android.provider.ContactsContract;
-
 import com.biasedbit.efflux.packet.DataPacket;
 import com.biasedbit.efflux.participant.RtpParticipantInfo;
 import com.biasedbit.efflux.session.RtpSession;
@@ -11,12 +9,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Created by ashi on 1/13/15.
@@ -34,7 +30,7 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
     // Jitter buffer variables
     private long presentationToSystemDifference;    // Used to convert between presentation and system time
     private long playHeadPresentationTime;                // Current position of the play head. Any packet older
-        // than this time has already been sent down to the extractor and decoder
+    // than this time has already been sent down to the extractor and decoder
 
     // Stream streamingState
     protected enum State {
@@ -42,6 +38,7 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
         CONFIGURING, // looking for frame delay
         STREAMING   // Receiving packets
     }
+
     private State streamingState;
 
     private static boolean DEBUGGING = false;
@@ -55,7 +52,7 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
     private final DataPacketSenderThread dataPacketSenderThread;
 
     // packets sorted by presentation time
-    TreeMap<Integer,DataPacket> buffer = new TreeMap();
+    TreeMap<Integer, DataPacket> buffer = new TreeMap();
 
     private Log log = LogFactory.getLog(RtpMediaJitterBuffer.class);
 
@@ -101,7 +98,7 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
     }
 
     public void logValues() {
-        log.info("Average: " + sumTimeCycleTimes/counter);
+        log.info("Average: " + sumTimeCycleTimes / counter);
         log.info("Max delay: " + maxTimeCycleTime);
     }
 
@@ -121,7 +118,7 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
         @Override
         public void run() {
             try {
-                while(running) {
+                while (running) {
                     // Wait first, since the thread is started as soon as the first packet arrives
                     sleep(SEND_LOOP_WAIT);
 
@@ -146,13 +143,13 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
                                 dropped++;
                             } else {
                                 packets.add(entry.getValue());
-                             }
+                            }
                             buffer.remove(entry.getKey());
                         }
                     }
 
                     // Send to extractor and decoder outside of blocking loop
-                    for(DataPacket packet: packets) {
+                    for (DataPacket packet : packets) {
                         try {
                             upstream.dataPacketReceived(session, participant, packet);
                         } catch (Throwable t) {

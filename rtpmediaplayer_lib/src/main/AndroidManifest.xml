@@ -2,9 +2,7 @@
     package="com.c77.rtpmediaplayer.lib">
 
     <uses-permission android:name="android.permission.INTERNET"></uses-permission>
-    <application
-        android:allowBackup="true">
-    </application>
+    <application android:allowBackup="true"></application>
 
 
 </manifest>

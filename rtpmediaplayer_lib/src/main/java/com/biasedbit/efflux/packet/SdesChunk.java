@@ -52,7 +52,7 @@ public class SdesChunk {
         // after decoding each SdesChunkItem so that when we read the end/null item, we know how many more bytes we
         // must read to discard the padding bytes (hit the 32bit alignment barrier).
         int read = 0;
-        for (;;) {
+        for (; ; ) {
             if (buffer.readableBytes() == 0) {
                 // Some implementations don't write the mandatory last item (end/null).
                 return chunk;

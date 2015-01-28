@@ -56,7 +56,7 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBu
     public NoDelayRtpMediaBuffer(RtpSessionDataListener upstream, Properties configuration) {
         this.upstream = upstream;
         currentState = State.IDLE;
-        if(configuration != null) {
+        if (configuration != null) {
             OUT_OF_ORDER_MAX_TIME = Long.parseLong(configuration.getProperty(CONFIG_TIMEOUT_MS, Long.toString(OUT_OF_ORDER_MAX_TIME)));
         }
         log.info("Using NoDelayRtpMediaBuffer with OUT_OF_ORDER_MAX_TIME = [" + OUT_OF_ORDER_MAX_TIME + "]");
@@ -66,7 +66,7 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBu
     public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
         if (currentState == State.IDLE) {
             nextExpectedSequenceNumber = packet.getSequenceNumber();
-            timestampDifference = System.currentTimeMillis() - packet.getTimestamp()/90;
+            timestampDifference = System.currentTimeMillis() - packet.getTimestamp() / 90;
 
             if (RtpMediaDecoder.DEBUGGING) {
                 log.info("Stream started. Timestamps: " + timestampDifference);
@@ -82,7 +82,7 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBu
             } catch (Exception e) {
                 log.error("Error while trying to pass packet to upstream", e);
             }
-            lastProcessedTimestamp = packet.getTimestamp()/90;
+            lastProcessedTimestamp = packet.getTimestamp() / 90;
             nextExpectedSequenceNumber = packet.getSequenceNumber() + 1;
 
             // Also send any subsequent packets that we were buffering!
@@ -98,14 +98,14 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBu
                 } catch (Exception e) {
                     log.error("Error while trying to pass packet to upstream", e);
                 }
-                lastProcessedTimestamp = oldPacket.getTimestamp()/90;
+                lastProcessedTimestamp = oldPacket.getTimestamp() / 90;
                 nextExpectedSequenceNumber = oldPacket.getSequenceNumber() + 1;
             }
 
         } else {
             // If we are receiving packets that are much newer than what we were waiting for, discard
             // our buffers and restart from here
-            if (packet.getTimestamp()/90 - lastProcessedTimestamp > OUT_OF_ORDER_MAX_TIME) {
+            if (packet.getTimestamp() / 90 - lastProcessedTimestamp > OUT_OF_ORDER_MAX_TIME) {
                 if (RtpMediaDecoder.DEBUGGING) {
                     log.warn("Out of order packets are getting too old. Resetting");
                 }
@@ -114,7 +114,7 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBu
                 } catch (Exception e) {
                     log.error("Error while trying to pass packet to upstream", e);
                 }
-                lastProcessedTimestamp = packet.getTimestamp()/90;
+                lastProcessedTimestamp = packet.getTimestamp() / 90;
                 nextExpectedSequenceNumber = packet.getSequenceNumber() + 1;
 
                 packetMap.clear();
@@ -127,7 +127,7 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBu
                 }
 
                 packetMap.put(packet.getSequenceNumber(), packet);
-                timestampMap.put(packet.getSequenceNumber(), packet.getTimestamp()/90);
+                timestampMap.put(packet.getSequenceNumber(), packet.getTimestamp() / 90);
             }
         }
     }

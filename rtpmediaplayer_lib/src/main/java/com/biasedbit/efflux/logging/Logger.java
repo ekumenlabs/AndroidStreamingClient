@@ -29,7 +29,7 @@ import org.slf4j.helpers.MessageFormatter;
 public class Logger {
 
     // internal vars --------------------------------------------------------------------------------------------------
-    
+
     private org.slf4j.Logger logger;
 
     // constructors ---------------------------------------------------------------------------------------------------
@@ -53,7 +53,6 @@ public class Logger {
      * Return a logger for a given class.
      *
      * @param clazz Class.
-     *
      * @return Logger for a class.
      */
     public static Logger getLogger(Class clazz) {

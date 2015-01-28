@@ -40,7 +40,7 @@ public abstract class ControlPacket {
     public static ControlPacket decode(ChannelBuffer buffer) {
         if ((buffer.readableBytes() % 4) > 0) {
             throw new IllegalArgumentException("Invalid RTCP packet length: expecting multiple of 4 and got " +
-                                               buffer.readableBytes());
+                    buffer.readableBytes());
         }
         byte b = buffer.readByte();
         RtpVersion version = RtpVersion.fromByte(b);

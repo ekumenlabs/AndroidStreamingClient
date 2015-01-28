@@ -92,7 +92,7 @@ public class SdesChunkItems {
                 buffer.readBytes(prefix);
                 buffer.readBytes(value);
                 return new SdesChunkPrivItem(new String(prefix, CharsetUtil.UTF_8),
-                                             new String(value, CharsetUtil.UTF_8));
+                        new String(value, CharsetUtil.UTF_8));
             default:
                 throw new IllegalArgumentException("Unknown type of SDES chunk: " + type);
         }

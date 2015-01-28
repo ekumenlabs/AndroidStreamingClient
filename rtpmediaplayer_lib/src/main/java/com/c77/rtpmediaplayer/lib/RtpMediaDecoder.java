@@ -13,9 +13,9 @@ import com.c77.rtpmediaplayer.lib.rtp.BufferDelayTracer;
 import com.c77.rtpmediaplayer.lib.rtp.MediaExtractor;
 import com.c77.rtpmediaplayer.lib.rtp.NoDelayRtpMediaBuffer;
 import com.c77.rtpmediaplayer.lib.rtp.OriginalRtpMediaExtractor;
-import com.c77.rtpmediaplayer.lib.rtp.RtpMediaExtractor;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaBuffer;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaBufferWithJitterAvoidance;
+import com.c77.rtpmediaplayer.lib.rtp.RtpMediaExtractor;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaJitterBuffer;
 import com.c77.rtpmediaplayer.lib.video.Decoder;
 
@@ -236,15 +236,15 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
             // Choose buffer implementation according to configuration
             RtpMediaBuffer buffer;
-            if("fixed-time".equalsIgnoreCase(bufferType)) {
+            if ("fixed-time".equalsIgnoreCase(bufferType)) {
                 rtpMediaExtractor = new OriginalRtpMediaExtractor(RtpMediaDecoder.this);
-                buffer = new RtpMediaJitterBuffer((OriginalRtpMediaExtractor)rtpMediaExtractor, configuration);
-            } else if("zero-delay".equalsIgnoreCase(bufferType)) {
+                buffer = new RtpMediaJitterBuffer((OriginalRtpMediaExtractor) rtpMediaExtractor, configuration);
+            } else if ("zero-delay".equalsIgnoreCase(bufferType)) {
                 rtpMediaExtractor = new OriginalRtpMediaExtractor(RtpMediaDecoder.this);
-                buffer = new NoDelayRtpMediaBuffer((OriginalRtpMediaExtractor)rtpMediaExtractor, configuration);
+                buffer = new NoDelayRtpMediaBuffer((OriginalRtpMediaExtractor) rtpMediaExtractor, configuration);
             } else {
                 rtpMediaExtractor = new RtpMediaExtractor(RtpMediaDecoder.this);
-                buffer = new RtpMediaBufferWithJitterAvoidance((RtpMediaExtractor)rtpMediaExtractor, configuration);
+                buffer = new RtpMediaBufferWithJitterAvoidance((RtpMediaExtractor) rtpMediaExtractor, configuration);
             }
             session.addDataListener(buffer);
 

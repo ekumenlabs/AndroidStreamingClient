@@ -86,7 +86,7 @@ public class ByePacket extends ControlPacket {
             reasonForLeavingBytes = packet.reasonForLeaving.getBytes(CharsetUtil.UTF_8);
             if (reasonForLeavingBytes.length > 255) {
                 throw new IllegalArgumentException("Reason for leaving cannot exceed 255 bytes and this has " +
-                                                   reasonForLeavingBytes.length);
+                        reasonForLeavingBytes.length);
             }
 
             size += (1 + reasonForLeavingBytes.length);

@@ -35,7 +35,6 @@ public class ByteUtils {
      * Hash a string
      *
      * @param toHash String to be hashed.
-     *
      * @return Hashed string.
      */
     public static String hash(Object toHash) {
