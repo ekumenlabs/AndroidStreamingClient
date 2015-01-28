@@ -60,6 +60,8 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
         this.upstream = upstream;
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
+
+        properties = (properties != null) ? properties : new Properties();
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
         BUFFER_SIZE_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "800"));
         log.info("Using RtpMediaJitterBuffer with BUFFER_SIZE_MILLISECONDS = [" + BUFFER_SIZE_MILLISECONDS + "]");

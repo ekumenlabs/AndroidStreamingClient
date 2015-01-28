@@ -198,6 +198,8 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
         @Override
         public void run() {
+            // Wait a little bit to make sure the RtpClientThread had the opporunity to start
+            // and create the rtpMediaExtractor
             try {
                 sleep(500);
             } catch (InterruptedException e) {

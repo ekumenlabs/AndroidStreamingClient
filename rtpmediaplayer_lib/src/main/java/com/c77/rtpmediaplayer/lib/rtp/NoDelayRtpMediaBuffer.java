@@ -54,11 +54,11 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBu
     // and this device's time at the time we received the first packet
 
     public NoDelayRtpMediaBuffer(RtpSessionDataListener upstream, Properties configuration) {
+        configuration = (configuration != null) ? configuration : new Properties();
         this.upstream = upstream;
         currentState = State.IDLE;
-        if (configuration != null) {
-            OUT_OF_ORDER_MAX_TIME = Long.parseLong(configuration.getProperty(CONFIG_TIMEOUT_MS, Long.toString(OUT_OF_ORDER_MAX_TIME)));
-        }
+
+        OUT_OF_ORDER_MAX_TIME = Long.parseLong(configuration.getProperty(CONFIG_TIMEOUT_MS, Long.toString(OUT_OF_ORDER_MAX_TIME)));
         log.info("Using NoDelayRtpMediaBuffer with OUT_OF_ORDER_MAX_TIME = [" + OUT_OF_ORDER_MAX_TIME + "]");
     }
 

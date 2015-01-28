@@ -47,9 +47,12 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
     RtpParticipantInfo participant;
 
     public RtpMediaBufferWithJitterAvoidance(RtpMediaExtractor rtpMediaExtractor, Properties properties) {
+
         this.rtpMediaExtractor = rtpMediaExtractor;
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
+
+        properties = (properties != null) ? properties : new Properties();
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
         FRAMES = Integer.parseInt(properties.getProperty(FRAMES_WINDOW_PROPERTY, "50"));
         log.info("Using RtpMediaBufferWithJitterAvoidance with FRAMES = [" + FRAMES + "]");
