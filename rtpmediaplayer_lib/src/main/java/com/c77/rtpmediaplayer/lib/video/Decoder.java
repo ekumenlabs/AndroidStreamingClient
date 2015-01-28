@@ -14,4 +14,6 @@ public interface Decoder {
 
     // Returns a new frame to be decoded
     public void decodeFrame(BufferedSample frame) throws Exception;
+
+    public void restart();
 }

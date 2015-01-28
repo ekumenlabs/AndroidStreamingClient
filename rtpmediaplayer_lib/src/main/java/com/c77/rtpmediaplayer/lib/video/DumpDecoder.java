@@ -29,4 +29,9 @@ public class DumpDecoder implements Decoder {
         debugging += " [" + new String(Hex.encodeHex(Arrays.copyOf(frame.getBuffer().array(), 16))) + "]";
         Log.i("DumpDecoder", debugging);
     }
+
+    @Override
+    public void restart() {
+
+    }
 }
