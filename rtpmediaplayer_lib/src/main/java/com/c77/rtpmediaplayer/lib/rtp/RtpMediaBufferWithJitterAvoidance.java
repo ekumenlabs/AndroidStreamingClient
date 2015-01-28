@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
     public static final String DEBUGGING_PROPERTY = "DEBUGGING";
-    public static final java.lang.String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW";
+    public static final java.lang.String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW_K";
     private State streamingState;
     private long lastTimestamp;
 
@@ -46,18 +46,13 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
     RtpSession session;
     RtpParticipantInfo participant;
 
-    public RtpMediaBufferWithJitterAvoidance(RtpMediaExtractor rtpMediaExtractor) {
-        this.rtpMediaExtractor = rtpMediaExtractor;
-        streamingState = State.IDLE;
-        dataPacketSenderThread = new DataPacketSenderThread();
-    }
-
     public RtpMediaBufferWithJitterAvoidance(RtpMediaExtractor rtpMediaExtractor, Properties properties) {
         this.rtpMediaExtractor = rtpMediaExtractor;
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
         FRAMES = Integer.parseInt(properties.getProperty(FRAMES_WINDOW_PROPERTY, "50"));
+        log.info("Using RtpMediaBufferWithJitterAvoidance with FRAMES = [" + FRAMES + "]");
     }
 
     @Override

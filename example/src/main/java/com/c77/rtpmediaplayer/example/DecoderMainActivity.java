@@ -11,9 +11,11 @@ import com.c77.rtpmediaplayer.lib.RtpMediaDecoder;
 
 import java.io.FileNotFoundException;
 import java.io.IOError;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.Properties;
 
 public class DecoderMainActivity extends Activity implements View.OnClickListener {
 
@@ -29,7 +31,15 @@ public class DecoderMainActivity extends Activity implements View.OnClickListene
 
         surfaceView = new SurfaceView(this);
         setContentView(surfaceView);
-        rtpMediaDecoder = new RtpMediaDecoder(surfaceView);
+
+        Properties configuration = new Properties();
+        try {
+            configuration.load(getApplicationContext().getAssets().open("configuration.ini"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        rtpMediaDecoder = new RtpMediaDecoder(surfaceView, configuration);
 
         // Try to trace
         OutputStream out;
@@ -41,18 +51,6 @@ public class DecoderMainActivity extends Activity implements View.OnClickListene
         }
 
         rtpMediaDecoder.DEBUGGING = false;
-
-        // Try to trace
-        OutputStream out;
-        try {
-            File file = new File(Environment.getExternalStorageDirectory()
-                    + File.separator + "example.txt");
-            file.createNewFile();
-            out = new FileOutputStream(file);
-            rtpMediaDecoder.setTraceOuputStream(out);
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
-        }
 
         rtpMediaDecoder.start();
 

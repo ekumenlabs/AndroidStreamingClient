@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class RtpMediaJitterBuffer implements RtpMediaBuffer {
     public static final String DEBUGGING_PROPERTY = "DEBUGGING";
-    public static final String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW";
+    public static final String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW_TIME";
 
     private long lastTimestamp;
 
@@ -59,19 +59,13 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
 
     private Log log = LogFactory.getLog(RtpMediaJitterBuffer.class);
 
-
-    public RtpMediaJitterBuffer(RtpSessionDataListener upstream) {
-        this.upstream = upstream;
-        streamingState = State.IDLE;
-        dataPacketSenderThread = new DataPacketSenderThread();
-    }
-
     public RtpMediaJitterBuffer(RtpSessionDataListener upstream, Properties properties) {
         this.upstream = upstream;
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
         BUFFER_SIZE_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "800"));
+        log.info("Using RtpMediaJitterBuffer with BUFFER_SIZE_MILLISECONDS = [" + BUFFER_SIZE_MILLISECONDS + "]");
     }
 
     @Override

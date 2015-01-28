@@ -16,7 +16,7 @@ import java.nio.ByteBuffer;
 /**
  * Created by julian on 12/12/14.
  */
-public class RtpMediaExtractor {
+public class RtpMediaExtractor implements MediaExtractor {
     private static Log log = LogFactory.getLog(RtpMediaExtractor.class);
 
     public static final String CSD_0 = "csd-0";
@@ -185,6 +185,7 @@ public class RtpMediaExtractor {
     }
 
     // Think how to get CSD-0/CSD-1 codec-specific data chunks
+    @Override
     public MediaFormat getMediaFormat() {
         String mimeType = "video/avc";
         int width = 640;

@@ -11,12 +11,15 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Created by julian on 1/7/15.
  */
-public class NoDelayRtpMediaBuffer implements RtpSessionDataListener {
-    private static final long OUT_OF_ORDER_MAX_TIME = 1000; // milliseconds. Wait up to this amount of
+public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBuffer {
+    public static final String CONFIG_TIMEOUT_MS = "NODELAY_TIMEOUT";
+
+    private long OUT_OF_ORDER_MAX_TIME = 1000; // milliseconds. Wait up to this amount of
     // time for missing packets to arrive. If we start getting packets newer than this, discard the old
     // ones and restart
 
@@ -28,6 +31,11 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener {
     // Temporary cache map of packets received out of order
     private Map<Integer, DataPacket> packetMap = new HashMap();
     private Map<Integer, Long> timestampMap = new HashMap();
+
+    @Override
+    public void stop() {
+
+    }
 
     // State variables
     private enum State {
@@ -45,9 +53,13 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener {
     private long timestampDifference;   // Keep track of the difference between the packet timestamps
     // and this device's time at the time we received the first packet
 
-    public NoDelayRtpMediaBuffer(RtpSessionDataListener upstream) {
+    public NoDelayRtpMediaBuffer(RtpSessionDataListener upstream, Properties configuration) {
         this.upstream = upstream;
         currentState = State.IDLE;
+        if(configuration != null) {
+            OUT_OF_ORDER_MAX_TIME = Long.parseLong(configuration.getProperty(CONFIG_TIMEOUT_MS, Long.toString(OUT_OF_ORDER_MAX_TIME)));
+        }
+        log.info("Using NoDelayRtpMediaBuffer with OUT_OF_ORDER_MAX_TIME = [" + OUT_OF_ORDER_MAX_TIME + "]");
     }
 
     @Override
