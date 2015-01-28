@@ -198,6 +198,10 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
         @Override
         public void run() {
+            try {
+                sleep(500);
+            } catch (InterruptedException e) {
+            }
             MediaFormat mediaFormat = rtpMediaExtractor.getMediaFormat();
             String mime = mediaFormat.getString(MediaFormat.KEY_MIME);
             if (mime.startsWith("video/")) {
