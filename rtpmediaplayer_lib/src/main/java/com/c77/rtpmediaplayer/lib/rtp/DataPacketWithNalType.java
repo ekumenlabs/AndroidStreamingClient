@@ -15,6 +15,8 @@ public class DataPacketWithNalType {
         UNKNOWN
     }
 
+    public static final int H264_STANDARD_MULTIPLIER = 9000;
+
     private DataPacket packet;
     private NalType nalType;
     private boolean fuStart;
@@ -55,7 +57,7 @@ public class DataPacketWithNalType {
 
     // not a good practice!
     private long getConvertedTimestamp(DataPacket packet) {
-        return packet.getTimestamp() / 90;
+        return packet.getTimestamp() / H264_STANDARD_MULTIPLIER;
     }
 
     public ChannelBuffer getData() {

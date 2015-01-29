@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  */
 public class Frame {
     private static final boolean DEBUGGING = false;
+    public static final int H264_STANDARD_MULTIPLIER = 9000;
     private final long timestamp;
     // packets sorted by their sequence number
     ConcurrentSkipListMap<Integer, DataPacketWithNalType> packets;
@@ -22,10 +23,11 @@ public class Frame {
      *
      * @param packet
      */
-    public Frame(DataPacketWithNalType packet) {
+    public Frame(DataPacket packet) {
         packets = new ConcurrentSkipListMap<Integer, DataPacketWithNalType>();
-        timestamp = packet.getTimestamp();
-        packets.put(new Integer(packet.getSequenceNumber()), packet);
+        // revert multiplication made by publisher
+        timestamp = packet.getTimestamp()/ H264_STANDARD_MULTIPLIER;
+        packets.put(new Integer(packet.getSequenceNumber()), new DataPacketWithNalType(packet));
     }
 
     public void addPacket(DataPacket packet) {
@@ -71,7 +73,7 @@ public class Frame {
         return false;
     }
 
-    public long timestamp() {
+    public long convertedTimestamp() {
         return timestamp;
     }
 }

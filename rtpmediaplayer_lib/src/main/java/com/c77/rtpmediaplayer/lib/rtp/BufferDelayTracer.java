@@ -30,7 +30,7 @@ public class BufferDelayTracer implements RtpSessionDataListener {
             // return 0 if is not end, 1 if it is end
             // return 0 if is NOT_FULL, 1 if it is FULL
             int type = lastPacket.nalType() == DataPacketWithNalType.NalType.NOT_FULL ? 0 : (lastPacket.nalType() == DataPacketWithNalType.NalType.STAPA ? 2 : 1);
-            traceWriter.write(System.nanoTime() + "," + packet.getSequenceNumber() + "," + packet.getTimestamp()/90 + "," + (lastPacket.isStart() ? 1 : 0) + "," + (lastPacket.isEnd() ? 1 : 0) + "," + type + "\n");
+            traceWriter.write(System.nanoTime() + "," + packet.getSequenceNumber() + "," + packet.getTimestamp()/9000 + "," + (lastPacket.isStart() ? 1 : 0) + "," + (lastPacket.isEnd() ? 1 : 0) + "," + type + "\n");
         }
     }
 }
