@@ -19,7 +19,6 @@ package com.biasedbit.efflux.network;
 import com.biasedbit.efflux.logging.Logger;
 import com.biasedbit.efflux.packet.CompoundControlPacket;
 import com.biasedbit.efflux.packet.ControlPacket;
-
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -57,7 +56,7 @@ public class ControlPacketDecoder implements ChannelUpstreamHandler {
         ChannelBuffer buffer = (ChannelBuffer) e.getMessage();
         if ((buffer.readableBytes() % 4) != 0) {
             LOG.debug("Invalid RTCP packet received: total length should be multiple of 4 but is {}",
-                    buffer.readableBytes());
+                      buffer.readableBytes());
             return;
         }
 

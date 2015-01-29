@@ -139,7 +139,7 @@ public class DefaultParticipantDatabase implements ParticipantDatabase {
             for (RtpParticipant member : this.members.values()) {
                 boolean sameDestinationAddresses =
                         member.getDataDestination().equals(remoteParticipant.getDataDestination()) &&
-                                member.getControlDestination().equals(remoteParticipant.getControlDestination());
+                        member.getControlDestination().equals(remoteParticipant.getControlDestination());
                 boolean sameCname = member.getInfo().getCname().equals(remoteParticipant.getInfo().getCname());
                 if (sameDestinationAddresses || sameCname) {
                     // Instead of adding the newly provided participant, reuse the member
@@ -287,7 +287,7 @@ public class DefaultParticipantDatabase implements ParticipantDatabase {
                 if (participant.receivedBye() && TimeUtils
                         .hasExpired(now, participant.getLastReceptionInstant(), timeout)) {
                     LOG.trace("Removed {} from session with id '{}' after reception of BYE and {}s of inactivity.",
-                            participant, this.id, this.timeoutAfterByeAndNoPacketsReceived);
+                              participant, this.id, this.timeoutAfterByeAndNoPacketsReceived);
                     iterator.remove();
                     if (participant.isReceiver()) {
                         this.receivers.remove(participant);

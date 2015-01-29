@@ -17,7 +17,6 @@
 package com.biasedbit.efflux.network;
 
 import com.biasedbit.efflux.packet.DataPacket;
-
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandler;

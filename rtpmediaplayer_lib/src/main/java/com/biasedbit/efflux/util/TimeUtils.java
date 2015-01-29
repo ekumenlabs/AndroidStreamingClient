@@ -52,6 +52,7 @@ public class TimeUtils {
      * @param now        Current instant.
      * @param eventTime  Instant at which the event took place.
      * @param timeBuffer The amount of time for which the event is valid (in seconds).
+     *
      * @return <code>true</code> if the event has expired, <code>false</code> otherwise
      */
     public static boolean hasExpired(long now, long eventTime, long timeBuffer) {
@@ -64,6 +65,7 @@ public class TimeUtils {
      * @param now        Current instant.
      * @param eventTime  Instant at which the event took place.
      * @param timeBuffer The amount of time for which the event is valid (in milliseconds).
+     *
      * @return <code>true</code> if the event has expired, <code>false</code> otherwise
      */
     public static boolean hasExpiredMillis(long now, long eventTime, long timeBuffer) {
