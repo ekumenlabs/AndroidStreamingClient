@@ -153,7 +153,6 @@ public class RtpMediaExtractor {
             } catch (RtpPlayerException e) {
                 // TODO: Proper error handling
                 currentFrameHasError = true;
-                e.printStackTrace();
             }
         }
 

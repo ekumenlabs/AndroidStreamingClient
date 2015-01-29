@@ -76,7 +76,9 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     /**
      * Restarts the underlying RTP session
      */
+    @Override
     public void restart() {
+        log.info("Restarting RtpMediaDecoder");
         rtpStopClient();
         rtpStartClient();
     }
@@ -108,7 +110,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     @Override
     public BufferedSample getSampleBuffer() throws RtpPlayerException {
-        int inIndex = decoder.dequeueInputBuffer(-1);
+        int inIndex = decoder.dequeueInputBuffer(0);
         if (inIndex < 0) {
             throw new RtpPlayerException("Didn't get a buffer from the MediaCodec");
         }
@@ -131,24 +133,24 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         switch (outIndex) {
             case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
                 if (DEBUGGING) {
-                    log.info("INFO_OUTPUT_BUFFERS_CHANGED");
+                    log.info("The output buffers have changed, the client must refer to the new set of output buffers from this point on.");
                 }
                 outputBuffers = decoder.getOutputBuffers();
                 break;
             case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
                 if (DEBUGGING) {
-                    log.info("New format " + decoder.getOutputFormat());
+                    log.info("The output format has changed, subsequent data will follow the new format.: " + decoder.getOutputFormat());
                 }
                 break;
             case MediaCodec.INFO_TRY_AGAIN_LATER:
                 if (DEBUGGING) {
-                    log.info("dequeueOutputBuffer timed out!");
+                    log.info("Callback timed out!");
                 }
                 break;
             default:
                 if (DEBUGGING) {
                     ByteBuffer buffer = outputBuffers[outIndex];
-                    log.info("We can't use this buffer but render it due to the API limit, " + buffer);
+                    log.info("Output buffer successfully decoded: " + buffer);
                 }
 
                 decoder.releaseOutputBuffer(outIndex, true);
