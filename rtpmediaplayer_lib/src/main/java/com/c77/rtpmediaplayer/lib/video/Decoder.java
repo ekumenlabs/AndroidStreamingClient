@@ -3,8 +3,6 @@ package com.c77.rtpmediaplayer.lib.video;
 import com.c77.rtpmediaplayer.lib.BufferedSample;
 import com.c77.rtpmediaplayer.lib.RtpPlayerException;
 
-import java.nio.ByteBuffer;
-
 /**
  * Created by julian on 12/15/14.
  */

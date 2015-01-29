@@ -1,18 +1,22 @@
 package com.c77.rtpmediaplayer.example;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.SurfaceView;
 import android.view.View;
 
 import com.c77.rtpmediaplayer.lib.RtpMediaDecoder;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Properties;
 
 public class DecoderMainActivity extends Activity implements View.OnClickListener {
+
+    private static final String TAG = "DecoderMainActivity";
+
     private SurfaceView surfaceView;
     private RtpMediaDecoder rtpMediaDecoder;
 
@@ -23,20 +27,26 @@ public class DecoderMainActivity extends Activity implements View.OnClickListene
 
         surfaceView = new SurfaceView(this);
         setContentView(surfaceView);
-        rtpMediaDecoder = new RtpMediaDecoder(surfaceView);
-        rtpMediaDecoder.DEBUGGING = false;
+
+        Properties configuration = new Properties();
+        try {
+            configuration.load(getApplicationContext().getAssets().open("configuration.ini"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        rtpMediaDecoder = new RtpMediaDecoder(surfaceView, configuration);
 
         // Try to trace
         OutputStream out;
         try {
-            File file = new File(Environment.getExternalStorageDirectory()
-                    + File.separator + "example.txt");
-            file.createNewFile();
-            out = new FileOutputStream(file);
+            out = getApplicationContext().openFileOutput("example.trace", Context.MODE_PRIVATE);
             rtpMediaDecoder.setTraceOuputStream(out);
-        } catch (java.io.IOException e) {
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+
+        rtpMediaDecoder.DEBUGGING = false;
 
         rtpMediaDecoder.start();
 

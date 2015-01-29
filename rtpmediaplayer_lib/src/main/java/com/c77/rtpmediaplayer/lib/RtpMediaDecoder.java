@@ -10,9 +10,13 @@ import com.biasedbit.efflux.participant.RtpParticipant;
 import com.biasedbit.efflux.session.AbstractRtpSession;
 import com.biasedbit.efflux.session.SingleParticipantSession;
 import com.c77.rtpmediaplayer.lib.rtp.BufferDelayTracer;
+import com.c77.rtpmediaplayer.lib.rtp.MediaExtractor;
+import com.c77.rtpmediaplayer.lib.rtp.NoDelayRtpMediaBuffer;
+import com.c77.rtpmediaplayer.lib.rtp.OriginalRtpMediaExtractor;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaBuffer;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaBufferWithJitterAvoidance;
 import com.c77.rtpmediaplayer.lib.rtp.RtpMediaExtractor;
+import com.c77.rtpmediaplayer.lib.rtp.RtpMediaJitterBuffer;
 import com.c77.rtpmediaplayer.lib.video.Decoder;
 
 import org.apache.commons.logging.Log;
@@ -28,13 +32,18 @@ import java.util.Properties;
 public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     public static final String DEBUGGING_PROPERTY = "DEBUGGING";
     public static final String CONFIG_USE_NIO = "USE_NIO";
+    public static final String CONFIG_BUFFER_TYPE = "BUFFER_TYPE";
+    public static final String CONFIG_RECEIVE_BUFFER_SIZE = "RECEIVE_BUFFER_SIZE_BYTES";
 
     public static boolean DEBUGGING;
+    public String bufferType = "fixed-frame-number";
+    public boolean useNio = true;
+    public int receiveBufferSize = 50000;
 
     private final SurfaceView surfaceView;
 
     private PlayerThread playerThread;
-    private RtpMediaExtractor rtpMediaExtractor;
+    private MediaExtractor rtpMediaExtractor;
     private RTPClientThread rtpSessionThread;
     private ByteBuffer[] inputBuffers;
     private ByteBuffer[] outputBuffers;
@@ -43,15 +52,9 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     private Log log = LogFactory.getLog(RtpMediaDecoder.class);
 
     private final Properties configuration;
+
     // If this stream is set, use it to trace packet arrival times
     private OutputStream traceOuputStream = null;
-
-    public RtpMediaDecoder(SurfaceView surfaceView) {
-        this.surfaceView = surfaceView;
-        surfaceView.getHolder().addCallback(this);
-        DEBUGGING = false;
-        configuration = new Properties();
-    }
 
     public void setTraceOuputStream(OutputStream out) {
         traceOuputStream = out;
@@ -62,9 +65,16 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
      * @param properties  used to configure the debugging variable
      */
     public RtpMediaDecoder(SurfaceView surfaceView, Properties properties) {
-        configuration = properties;
+        configuration = (properties != null) ? properties : new Properties();
+
+        // Read configuration
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
-        log.info("Debugging set to: " + DEBUGGING);
+        bufferType = properties.getProperty(CONFIG_BUFFER_TYPE, bufferType);
+        useNio = Boolean.parseBoolean(configuration.getProperty(CONFIG_USE_NIO, Boolean.toString(useNio)));
+        receiveBufferSize = Integer.parseInt(configuration.getProperty(CONFIG_RECEIVE_BUFFER_SIZE, Integer.toString(receiveBufferSize)));
+
+        log.info("RtpMediaDecoder started with params (" + DEBUGGING + "," + bufferType + "," + useNio + "," + receiveBufferSize + ")");
+
         this.surfaceView = surfaceView;
         surfaceView.getHolder().addCallback(this);
     }
@@ -95,9 +105,6 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     }
 
     private void rtpStartClient() {
-        // Create a decoder and pass it to the Rtp Extractor
-        rtpMediaExtractor = new RtpMediaExtractor(this);
-
         rtpSessionThread = new RTPClientThread();
         rtpSessionThread.start();
     }
@@ -191,6 +198,12 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
         @Override
         public void run() {
+            // Wait a little bit to make sure the RtpClientThread had the opporunity to start
+            // and create the rtpMediaExtractor
+            try {
+                sleep(500);
+            } catch (InterruptedException e) {
+            }
             MediaFormat mediaFormat = rtpMediaExtractor.getMediaFormat();
             String mime = mediaFormat.getString(MediaFormat.KEY_MIME);
             if (mime.startsWith("video/")) {
@@ -222,12 +235,24 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             if (traceOuputStream != null) {
                 session.addDataListener(new BufferDelayTracer(traceOuputStream));
             }
-            RtpMediaBuffer buffer = new RtpMediaBufferWithJitterAvoidance(rtpMediaExtractor);
+
+            // Choose buffer implementation according to configuration
+            RtpMediaBuffer buffer;
+            if ("fixed-time".equalsIgnoreCase(bufferType)) {
+                rtpMediaExtractor = new OriginalRtpMediaExtractor(RtpMediaDecoder.this);
+                buffer = new RtpMediaJitterBuffer((OriginalRtpMediaExtractor) rtpMediaExtractor, configuration);
+            } else if ("zero-delay".equalsIgnoreCase(bufferType)) {
+                rtpMediaExtractor = new OriginalRtpMediaExtractor(RtpMediaDecoder.this);
+                buffer = new NoDelayRtpMediaBuffer((OriginalRtpMediaExtractor) rtpMediaExtractor, configuration);
+            } else {
+                rtpMediaExtractor = new RtpMediaExtractor(RtpMediaDecoder.this);
+                buffer = new RtpMediaBufferWithJitterAvoidance((RtpMediaExtractor) rtpMediaExtractor, configuration);
+            }
             session.addDataListener(buffer);
 
             session.setDiscardOutOfOrder(false);
 
-            // This parameter changes the underlying I/O mechamism used by Netty
+            // This parameter changes the underlying I/O mechanism used by Netty
             // It is counter-intuitive: 'false' will force the usage of NioDatagramChannelFactory
             // vs. the default (true) which uses OioDatagramChannelFactory
             // It is unclear which produces better results. This value
@@ -237,14 +262,12 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             // NOTE: Despite fixing the memory usage, it is still pending to test which method produces
             // best overall results
             //
-            boolean useNio = Boolean.parseBoolean(configuration.getProperty(CONFIG_USE_NIO, "true"));
             session.setUseNio(useNio);
-            log.info("Use NIO = " + useNio);
 
             // NOTE: This parameter seems to affect the performance a lot.
             // The default value of 1500 drops many more packets than
             // the experimental value of 15000 (and later increased to 30000)
-            session.setReceiveBufferSize(50000);
+            session.setReceiveBufferSize(receiveBufferSize);
 
             session.init();
 
