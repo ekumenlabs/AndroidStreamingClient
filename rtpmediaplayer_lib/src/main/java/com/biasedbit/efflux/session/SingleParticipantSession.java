@@ -63,6 +63,8 @@ public class SingleParticipantSession extends AbstractRtpSession {
     private boolean sendToLastOrigin;
     private boolean ignoreFromUnknownSsrc;
     private SsrcListener ssrcListener;
+    private int unknownSsrcCounter = 0;
+    private final int UNKNOWN_SSRC_COUNTER_THRESHOLD = 50;
 
     // internal vars --------------------------------------------------------------------------------------------------
 
@@ -207,12 +209,15 @@ public class SingleParticipantSession extends AbstractRtpSession {
         } else if (this.ignoreFromUnknownSsrc && (packet.getSsrc() != this.receiver.getInfo().getSsrc())) {
             LOG.warn("Discarded packet from unexpected SSRC: {} (expected was {}). Informing ssrcListener.",
                       packet.getSsrc(), this.receiver.getInfo().getSsrc());
-            if (ssrcListener != null) {
+            unknownSsrcCounter++;
+            if (ssrcListener != null && unknownSsrcCounter > UNKNOWN_SSRC_COUNTER_THRESHOLD) {
+                unknownSsrcCounter = 0;
                 ssrcListener.onSsrcChanged();
             }
             return;
         }
 
+        unknownSsrcCounter = 0;
         super.dataPacketReceived(origin, packet);
     }
 
