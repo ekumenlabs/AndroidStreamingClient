@@ -16,6 +16,7 @@
 
 package com.biasedbit.efflux.session;
 
+import com.biasedbit.efflux.SsrcListener;
 import com.biasedbit.efflux.packet.CompoundControlPacket;
 import com.biasedbit.efflux.packet.ControlPacket;
 import com.biasedbit.efflux.packet.DataPacket;
@@ -61,6 +62,9 @@ public class SingleParticipantSession extends AbstractRtpSession {
     private final RtpParticipant receiver;
     private boolean sendToLastOrigin;
     private boolean ignoreFromUnknownSsrc;
+    private SsrcListener ssrcListener;
+    private int unknownSsrcCounter = 0;
+    private final int UNKNOWN_SSRC_COUNTER_THRESHOLD = 50;
 
     // internal vars --------------------------------------------------------------------------------------------------
 
@@ -203,11 +207,17 @@ public class SingleParticipantSession extends AbstractRtpSession {
             this.receiver.getInfo().setSsrc(packet.getSsrc());
             LOG.warn("First packet received from remote source, updated SSRC to {}.", packet.getSsrc());
         } else if (this.ignoreFromUnknownSsrc && (packet.getSsrc() != this.receiver.getInfo().getSsrc())) {
-            LOG.warn("Discarded packet from unexpected SSRC: {} (expected was {}).",
+            LOG.warn("Discarded packet from unexpected SSRC: {} (expected was {}). Informing ssrcListener.",
                       packet.getSsrc(), this.receiver.getInfo().getSsrc());
+            unknownSsrcCounter++;
+            if (ssrcListener != null && unknownSsrcCounter > UNKNOWN_SSRC_COUNTER_THRESHOLD) {
+                unknownSsrcCounter = 0;
+                ssrcListener.onSsrcChanged();
+            }
             return;
         }
 
+        unknownSsrcCounter = 0;
         super.dataPacketReceived(origin, packet);
     }
 
@@ -237,5 +247,9 @@ public class SingleParticipantSession extends AbstractRtpSession {
             throw new IllegalArgumentException("Cannot modify property after initialisation");
         }
         this.ignoreFromUnknownSsrc = ignoreFromUnknownSsrc;
+    }
+
+    public void setSsrcListener(SsrcListener listener) {
+        ssrcListener = listener;
     }
 }

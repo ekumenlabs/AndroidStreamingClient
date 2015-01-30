@@ -6,6 +6,7 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.biasedbit.efflux.SsrcListener;
 import com.biasedbit.efflux.participant.RtpParticipant;
 import com.biasedbit.efflux.session.AbstractRtpSession;
 import com.biasedbit.efflux.session.SingleParticipantSession;
@@ -223,13 +224,22 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     }
 
     private class RTPClientThread extends Thread {
-        private AbstractRtpSession session;
+        private SingleParticipantSession session;
 
         @Override
         public void run() {
             RtpParticipant participant = RtpParticipant.createReceiver("0.0.0.0", 5006, 5007);
             RtpParticipant remoteParticipant = RtpParticipant.createReceiver("10.34.0.10", 4556, 4557);
             session = new SingleParticipantSession("1", 96, participant, remoteParticipant);
+            // listen to ssrc changes, in order to be able to auto-magically "reconnect",
+            // i.e. if video publisher is closed and re-opened.
+            session.setSsrcListener(new SsrcListener() {
+                @Override
+                public void onSsrcChanged() {
+                    log.warn("Ssrc changed, restarting decoder");
+                    RtpMediaDecoder.this.restart();
+                }
+            });
 
             // Optionally trace to file
             if (traceOuputStream != null) {
