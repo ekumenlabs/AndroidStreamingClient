@@ -225,6 +225,8 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
                 session.addDataListener(new BufferDelayTracer(traceOuputStream));
             }
             RtpMediaBuffer buffer = new RtpMediaBufferWithJitterAvoidance(rtpMediaExtractor);
+
+            ((RtpMediaBufferWithJitterAvoidance) buffer).setTracer(new BufferDelayTracer(traceOuputStream));
             session.addDataListener(buffer);
 
             session.setDiscardOutOfOrder(false);

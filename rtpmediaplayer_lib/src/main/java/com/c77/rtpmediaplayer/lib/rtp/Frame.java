@@ -14,6 +14,7 @@ public class Frame {
     private static final boolean DEBUGGING = false;
     public static final int H264_STANDARD_MULTIPLIER = 9000;
     private final long timestamp;
+    private DataPacketWithNalType lastPacket;
     // packets sorted by their sequence number
     ConcurrentSkipListMap<Integer, DataPacketWithNalType> packets;
     private Log log = LogFactory.getLog(Frame.class);
@@ -27,11 +28,13 @@ public class Frame {
         packets = new ConcurrentSkipListMap<Integer, DataPacketWithNalType>();
         // revert multiplication made by publisher
         timestamp = packet.getTimestamp()/ H264_STANDARD_MULTIPLIER;
-        packets.put(new Integer(packet.getSequenceNumber()), new DataPacketWithNalType(packet));
+        lastPacket = new DataPacketWithNalType(packet);
+        packets.put(new Integer(packet.getSequenceNumber()), lastPacket);
     }
 
     public void addPacket(DataPacket packet) {
-        packets.put(new Integer(packet.getSequenceNumber()), new DataPacketWithNalType(packet));
+        lastPacket = new DataPacketWithNalType(packet);
+        packets.put(new Integer(packet.getSequenceNumber()), lastPacket);
     }
 
     public java.util.Collection<DataPacketWithNalType> getPackets() {
@@ -75,5 +78,9 @@ public class Frame {
 
     public long convertedTimestamp() {
         return timestamp;
+    }
+
+    public DataPacketWithNalType getLastPacket() {
+        return lastPacket;
     }
 }
