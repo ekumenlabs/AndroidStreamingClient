@@ -21,11 +21,18 @@ android {
         exclude 'META-INF/LICENSE.txt'
         exclude 'META-INF/NOTICE.txt'
     }
+
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
-    compile 'org.jboss.netty:netty:+'
-    compile 'eu.lp0.slf4j:slf4j-android:+'
-    compile 'org.apache.directory.studio:org.apache.commons.codec:+'
+    // compile 'Group:Artifact:Version'
+    compile 'org.jboss.netty:netty:3.2.4.Final'
+    compile 'eu.lp0.slf4j:slf4j-android:1.7.5-5'
+    compile 'org.apache.directory.studio:org.apache.commons.codec:1.6'
     compile 'org.apache.commons:com.springsource.org.apache.commons.logging:1.1.1'
 }
+
+apply from: '../maven_push.gradle'
