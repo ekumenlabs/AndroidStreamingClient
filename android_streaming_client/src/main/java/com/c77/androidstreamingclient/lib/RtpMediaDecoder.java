@@ -267,7 +267,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             // vs. the default (true) which uses OioDatagramChannelFactory
             // It is unclear which produces better results. This value
             // (false, to make NioDatagramChannelFactory used) resolves the memory management usage
-            // reported in https://github.com/creativa77/RtpMediaPlayer/issues/4
+            // reported in https://github.com/creativa77/AndroidStreamingClient/issues/4
             // It may make sense that this works better for us since efflux is not used in Android normally
             // NOTE: Despite fixing the memory usage, it is still pending to test which method produces
             // best overall results
