@@ -42,22 +42,20 @@ Inside the android brackets add the following line:
 
 * Import Android Streaming Client project in your favorite Android IDE, also.
 
-* Check the client device's ip address and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly. 
+* Check the ip address of the client device (B) and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly. 
 
 That way, the publisher (example4) will know where to stream the video.
 
-* Run example4 in the server Android device.
+* Run example4 in the server Android device (A).
 
-* Run the module example from AndroidStreamingClient repository in the client Android device.
+* Run the module example from AndroidStreamingClient repository in the client Android device (B).
 
-If everything works, you will be streaming video from one device to another in real time.
-
-Enjoy!
+If everything works, you will be streaming video from one device (A) to another (B) in real time.
 
 ##License
 
 ```
-Copyright 2015 Creativa77
+Copyright 2015 Creativa77 SRL
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
