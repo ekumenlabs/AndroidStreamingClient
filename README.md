@@ -28,7 +28,7 @@ Keep in mind that, as libstreaming-examples uses libstreaming as a dependency, y
 
 If using Android Studio, you should import each example (example1, example2, and so on) as a module inside an already existing project. Android Studio will automatically create a build.gradle file for each imported module. Remember to add the libstreaming dependency to those files.
 
-Inside the android brackets add the following line:
+Add the following line at the end of the corresponding build.gradle file:
 ```
    dependencies {
       compile project(':libstreaming')
@@ -51,6 +51,16 @@ That way, the publisher (example4) will know where to stream the video.
 * Run the module example from AndroidStreamingClient repository in the client Android device (B).
 
 If everything works, you will be streaming video from one device (A) to another (B) in real time.
+
+##Gradle dependency
+
+Add the following line at the end of your module's build.gradle file:
+```
+dependencies {
+   compile('com.creativa77:android_streaming_client:1.0.0')
+}
+```
+> Version number may change.
 
 ##License
 
