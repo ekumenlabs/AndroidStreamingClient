@@ -6,6 +6,10 @@ Android library that receives video streaming and plays it in an Android device 
 The current version of the code only supports RTP over UDP as the transport protocol and decodes H264 encoded video.
 As streaming server, we are using libstreaming library with some modifications running in another Android devices.
 
+##Content of the project
+
+This repository contains an Android library which source code is located in the folder [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) and an Android module that uses the library. This module is a simple example of how to use the library and it is located in the folder [example](AndroidStreamingClient/tree/master/example).
+
 ##How to use it
 
 Android Streaming Client uses a [libstreaming library for Android's fork](https://github.com/ashyonline/libstreaming) to stream video. 
