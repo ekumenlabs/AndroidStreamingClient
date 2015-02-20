@@ -1,16 +1,22 @@
 #Android Streaming Client
 
-##About
+About
+-----
 
 Android library that receives video streaming and plays it in an Android device (particularly in a SurfaceView).
 The current version of the code only supports RTP over UDP as the transport protocol and decodes H264 encoded video.
 As streaming server, we are using libstreaming library with some modifications running in another Android devices.
 
-##Content of the project
+Content of the project
+----------------------
 
-This repository contains an Android library which source code is located in the folder [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) and an Android module that uses the library. This module is a simple example of how to use the library and it is located in the folder [example](AndroidStreamingClient/tree/master/example).
+This project contains an Android library which source code is located in the folder [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) and an Android module that uses the library. This module is a simple example of how to use the library and it is located in the folder [example](AndroidStreamingClient/tree/master/example).
+You will also find several gradle files, as this is an Android Studio project and for Android Studio users it is nice to have those files to avoid fighting with dependencies, versions, and other project configurations.
+The [license_script folder](https://github.com/creativa77/AndroidStreamingClient/tree/master/license_script) includes a script to apply the license to every java file along with the license text itself.
+You can also find the [LICENSE](https://github.com/creativa77/AndroidStreamingClient/blob/master/LICENCE) and [README](https://github.com/creativa77/AndroidStreamingClient/blob/master/README.md) in the root folder of the project.
 
-##How to use it
+How to use it
+-------------
 
 Android Streaming Client uses a [libstreaming library for Android's fork](https://github.com/ashyonline/libstreaming) to stream video. 
 There is also a [fork from libstreaming-examples](https://github.com/ashyonline/libstreaming-examples) that adds a fourth example (look for example4 folder) to the 3 existing ones. 
@@ -39,7 +45,7 @@ Add the following line at the end of the corresponding build.gradle file:
    }
 ```
 
-* Clone this one repository:
+* Clone this repository:
 ```
    > git clone git@github.com:creativa77/AndroidStreamingClient.git
 ```
@@ -56,7 +62,46 @@ That way, the publisher (example4) will know where to stream the video.
 
 If everything works, you will be streaming video from one device (A) to another (B) in real time.
 
-##Gradle dependency
+Code snippet
+------------
+
+How to simple use this library in your main activity.
+
+```
+
+   import com.c77.androidstreamingclient.lib.RtpMediaDecoder;
+   
+   ... 
+   
+   @Override
+   protected void onCreate(Bundle savedInstanceState) {
+
+      ...
+   
+      // create an RtpMediaCodec with the surface view where you want the video to be shown
+      RtpMediaDecoder rtpMediaDecoder = new RtpMediaDecoder(surfaceView);   
+      // start it
+      rtpMediaDecoder.start();
+      
+      ...
+   }
+   
+   @Override
+   protected void onStop() {
+      
+      ...
+      
+      // release decoder when application is stopped
+      rtpMediaDecoder.release();
+      
+      ...
+      
+   }
+   
+```
+
+Gradle dependency
+-----------------
 
 Add the following line at the end of your module's build.gradle file:
 ```
@@ -66,7 +111,22 @@ dependencies {
 ```
 > Version number may change.
 
-##License
+Authors
+-------
+
+Ayelen Chavez <ashi@creativa77.com.ar>
+
+Julian Cerruti <jcerruti@creativa77.com.ar>
+
+Issues, bugs, feature requests
+------------------------------
+
+[Github issue tracker](https://github.com/creativa77/AndroidStreamingClient/issues/new)
+
+License
+-------
+
+This project uses code from [efflux library](https://github.com/brunodecarvalho/efflux) Copyright 2010 Bruno de Carvalho, licensed under the Apache License, Version 2.0.
 
 ```
 Copyright 2015 Creativa77 SRL
@@ -89,3 +149,8 @@ Ayelen Chavez ashi@creativa77.com.ar
 Julian Cerruti jcerruti@creativa77.com.ar
 
 ```
+
+Documentation
+-------------
+
+Coming soon
