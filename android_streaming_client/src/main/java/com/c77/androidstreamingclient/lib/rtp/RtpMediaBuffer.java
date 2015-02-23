@@ -25,8 +25,8 @@ package com.c77.androidstreamingclient.lib.rtp;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
 
 /**
- * Interface that adds up a stop method to the RTP Session Data Listeners to let the buffers
- * being closed properly.
+ * Interface that adds up a stop method to the RTP Session Data Listeners to assure the buffers
+ * are closed properly.
  *
  * @author Julian Cerruti
  */

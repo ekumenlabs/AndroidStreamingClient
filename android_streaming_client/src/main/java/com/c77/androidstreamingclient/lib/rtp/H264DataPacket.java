@@ -28,8 +28,7 @@ import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * DataPacket wrapper that includes knowledge about the NAL type and the interpretation of the
- * packet's bits in order to know whether is a packet that starts or ends a frame, among other
- * H.264 specifications.
+ * packet's bits according to H.264 specifications.
  *
  * @author Ayelen Chavez
  */

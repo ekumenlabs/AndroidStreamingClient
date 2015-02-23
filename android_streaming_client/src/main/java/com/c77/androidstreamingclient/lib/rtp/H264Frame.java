@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Frame represented as a set of packets that share the same timestamp and have consecutive
- * sequence number.
+ * sequence numbers.
  *
  * @author Ayelen Chavez
  */
