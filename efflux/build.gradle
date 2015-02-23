@@ -17,22 +17,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
-    packagingOptions {
-        exclude 'META-INF/LICENSE.txt'
-        exclude 'META-INF/NOTICE.txt'
-    }
-
-    lintOptions {
-        abortOnError false
-    }
 }
 
 dependencies {
-    // compile 'Group:Artifact:Version'
-    compile 'org.apache.directory.studio:org.apache.commons.codec:1.6'
-    compile 'org.apache.commons:com.springsource.org.apache.commons.logging:1.1.1'
-    compile project(':efflux')
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'org.jboss.netty:netty:3.2.4.Final'
+    compile 'eu.lp0.slf4j:slf4j-android:1.7.5-5'
 }
-
-apply from: '../maven_push.gradle'

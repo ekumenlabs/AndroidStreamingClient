@@ -1,1 +1,1 @@
-include ':example', ':android_streaming_client'
+include ':example', ':android_streaming_client', ':efflux'
