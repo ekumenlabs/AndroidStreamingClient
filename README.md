@@ -17,6 +17,8 @@ This project contains an Android library which source code is located in the <br
 folder [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) and an Android module that uses the library. <br>
 This module is a simple example of how to use the library and it is located in <br>
 the folder [example](AndroidStreamingClient/tree/master/example).<br>
+You may notice there is a folder called [efflux] (AndroidStreamingClient/tree/master/efflux) which is a third party library <br>
+we use to receive RTP data packets from the nework. <br>
 You will also find several gradle files, as this is an Android Studio project <br>
 and for Android Studio users it is nice to have those files to avoid fighting <br>
 with dependencies, versions, and other project configurations.<br>
@@ -146,7 +148,10 @@ License
 -------
 
 This project uses code from [efflux library](https://github.com/brunodecarvalho/efflux) Copyright 2010 Bruno de Carvalho, <br>
-licensed under the Apache License, Version 2.0.
+licensed under the Apache License, Version 2.0.<br>
+Efflux author gave us full approval to use his library. <br>
+
+Android Streaming Client is licensed under the Apache License, Version 2.0.
 
 ```
 Copyright 2015 Creativa77 SRL
