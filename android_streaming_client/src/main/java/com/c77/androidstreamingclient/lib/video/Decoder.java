@@ -22,8 +22,7 @@
 
 package com.c77.androidstreamingclient.lib.video;
 
-import com.c77.androidstreamingclient.lib.BufferedSample;
-import com.c77.androidstreamingclient.lib.RtpPlayerException;
+import com.c77.androidstreamingclient.lib.exceptions.RtpPlayerException;
 
 /**
  * @author Julian Cerruti

@@ -28,9 +28,8 @@ import com.biasedbit.efflux.packet.DataPacket;
 import com.biasedbit.efflux.participant.RtpParticipantInfo;
 import com.biasedbit.efflux.session.RtpSession;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
-import com.c77.androidstreamingclient.lib.BufferedSample;
-import com.c77.androidstreamingclient.lib.RtpMediaDecoder;
-import com.c77.androidstreamingclient.lib.RtpPlayerException;
+import com.c77.androidstreamingclient.lib.video.BufferedSample;
+import com.c77.androidstreamingclient.lib.exceptions.RtpPlayerException;
 import com.c77.androidstreamingclient.lib.video.Decoder;
 
 import org.apache.commons.logging.Log;

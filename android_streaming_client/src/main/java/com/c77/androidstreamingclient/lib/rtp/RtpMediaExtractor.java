@@ -25,8 +25,8 @@ package com.c77.androidstreamingclient.lib.rtp;
 import android.media.MediaFormat;
 
 import com.biasedbit.efflux.packet.DataPacket;
-import com.c77.androidstreamingclient.lib.BufferedSample;
-import com.c77.androidstreamingclient.lib.RtpPlayerException;
+import com.c77.androidstreamingclient.lib.video.BufferedSample;
+import com.c77.androidstreamingclient.lib.exceptions.RtpPlayerException;
 import com.c77.androidstreamingclient.lib.video.Decoder;
 
 import org.apache.commons.logging.Log;

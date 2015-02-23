@@ -20,7 +20,7 @@
 *
 */
 
-package com.c77.androidstreamingclient.lib;
+package com.c77.androidstreamingclient.lib.video;
 
 import org.apache.commons.codec.binary.Hex;
 

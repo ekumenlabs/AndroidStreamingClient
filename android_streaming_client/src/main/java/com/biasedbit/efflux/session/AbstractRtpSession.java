@@ -39,7 +39,7 @@ import com.biasedbit.efflux.participant.ParticipantDatabase;
 import com.biasedbit.efflux.participant.ParticipantOperation;
 import com.biasedbit.efflux.participant.RtpParticipant;
 import com.biasedbit.efflux.participant.RtpParticipantInfo;
-import com.c77.androidstreamingclient.lib.RtpMediaDecoder;
+import com.c77.androidstreamingclient.lib.rtp.RtpMediaDecoder;
 
 import org.jboss.netty.bootstrap.ConnectionlessBootstrap;
 import org.jboss.netty.channel.ChannelPipeline;

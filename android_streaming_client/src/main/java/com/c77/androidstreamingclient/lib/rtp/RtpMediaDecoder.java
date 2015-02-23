@@ -20,7 +20,7 @@
 *
 */
 
-package com.c77.androidstreamingclient.lib;
+package com.c77.androidstreamingclient.lib.rtp;
 
 import android.media.MediaCodec;
 import android.media.MediaFormat;
@@ -31,14 +31,8 @@ import android.view.SurfaceView;
 import com.biasedbit.efflux.SsrcListener;
 import com.biasedbit.efflux.participant.RtpParticipant;
 import com.biasedbit.efflux.session.SingleParticipantSession;
-import com.c77.androidstreamingclient.lib.rtp.DataPacketTracer;
-import com.c77.androidstreamingclient.lib.rtp.MediaExtractor;
-import com.c77.androidstreamingclient.lib.rtp.NoDelayRtpMediaBuffer;
-import com.c77.androidstreamingclient.lib.rtp.OriginalRtpMediaExtractor;
-import com.c77.androidstreamingclient.lib.rtp.RtpMediaBuffer;
-import com.c77.androidstreamingclient.lib.rtp.RtpMediaBufferWithJitterAvoidance;
-import com.c77.androidstreamingclient.lib.rtp.RtpMediaExtractor;
-import com.c77.androidstreamingclient.lib.rtp.RtpMediaJitterBuffer;
+import com.c77.androidstreamingclient.lib.video.BufferedSample;
+import com.c77.androidstreamingclient.lib.exceptions.RtpPlayerException;
 import com.c77.androidstreamingclient.lib.video.Decoder;
 
 import org.apache.commons.logging.Log;
@@ -171,7 +165,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
      * Retrieves a buffer from the decoder to be filled with data getting it from the Android
      * decoder input buffers
      * @return
-     * @throws RtpPlayerException if no such buffer is currently available
+     * @throws com.c77.androidstreamingclient.lib.exceptions.RtpPlayerException if no such buffer is currently available
      */
     @Override
     public BufferedSample getSampleBuffer() throws RtpPlayerException {

@@ -20,7 +20,7 @@
 *
 */
 
-package com.c77.androidstreamingclient.lib;
+package com.c77.androidstreamingclient.lib.exceptions;
 
 /**
  * Exception thrown when an RTP player error occurs.

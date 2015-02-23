@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.view.SurfaceView;
 import android.view.View;
 
-import com.c77.androidstreamingclient.lib.RtpMediaDecoder;
+import com.c77.androidstreamingclient.lib.rtp.RtpMediaDecoder;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
