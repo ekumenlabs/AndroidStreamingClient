@@ -10,6 +10,7 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -29,10 +30,9 @@ android {
 
 dependencies {
     // compile 'Group:Artifact:Version'
-    compile 'org.jboss.netty:netty:3.2.4.Final'
-    compile 'eu.lp0.slf4j:slf4j-android:1.7.5-5'
     compile 'org.apache.directory.studio:org.apache.commons.codec:1.6'
     compile 'org.apache.commons:com.springsource.org.apache.commons.logging:1.1.1'
+    compile project(':efflux')
 }
 
 apply from: '../maven_push.gradle'

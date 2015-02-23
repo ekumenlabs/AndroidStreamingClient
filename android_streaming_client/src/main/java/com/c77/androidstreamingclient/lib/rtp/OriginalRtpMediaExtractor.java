@@ -28,9 +28,8 @@ import com.biasedbit.efflux.packet.DataPacket;
 import com.biasedbit.efflux.participant.RtpParticipantInfo;
 import com.biasedbit.efflux.session.RtpSession;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
-import com.c77.androidstreamingclient.lib.BufferedSample;
-import com.c77.androidstreamingclient.lib.RtpMediaDecoder;
-import com.c77.androidstreamingclient.lib.RtpPlayerException;
+import com.c77.androidstreamingclient.lib.video.BufferedSample;
+import com.c77.androidstreamingclient.lib.exceptions.RtpPlayerException;
 import com.c77.androidstreamingclient.lib.video.Decoder;
 
 import org.apache.commons.logging.Log;
@@ -40,25 +39,23 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import java.nio.ByteBuffer;
 
 /**
- * Created by julian on 12/12/14.
+ * RTP Extractor that takes packets, creates frames and sends them to the decoder.
+ * It has all the knowledge to parse H.264 packets, create frames from them and send them according
+ * to the specs.
+ *
+ * @author Julian Cerruti
  */
 public class OriginalRtpMediaExtractor implements RtpSessionDataListener, MediaExtractor {
-    private static Log log = LogFactory.getLog(OriginalRtpMediaExtractor.class);
-
     public static final String CSD_0 = "csd-0";
     public static final String CSD_1 = "csd-1";
     public static final String DURATION_US = "durationUs";
-
-
+    private static Log log = LogFactory.getLog(OriginalRtpMediaExtractor.class);
+    private final byte[] byteStreamStartCodePrefix = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01};
+    private final Decoder decoder;
     // Extractor settings
     //   Whether to use Byte Stream Format (H.264 spec., annex B)
     //   (prepends the byte stream 0x00000001 to each NAL unit)
     private boolean useByteStreamFormat = true;
-
-    private final byte[] byteStreamStartCodePrefix = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01};
-
-    private final Decoder decoder;
-
     private int lastSequenceNumber = 0;
     private boolean lastSequenceNumberIsValid = false;
     private boolean sequenceError = false;
@@ -66,10 +63,22 @@ public class OriginalRtpMediaExtractor implements RtpSessionDataListener, MediaE
     private boolean currentFrameHasError = false;
     private BufferedSample currentFrame;
 
+    /**
+     * Creates an RTP extractor that uses a given decoder.
+     *
+     * @param decoder
+     */
     public OriginalRtpMediaExtractor(Decoder decoder) {
         this.decoder = decoder;
     }
 
+    /**
+     * Processes every arriving packet parsing its content, creates frames accordingly and sends them.
+     *
+     * @param session
+     * @param participant
+     * @param packet
+     */
     @Override
     public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
         String debugging = "RTP data. ";
@@ -228,6 +237,12 @@ public class OriginalRtpMediaExtractor implements RtpSessionDataListener, MediaE
         lastSequenceNumberIsValid = true;
     }
 
+    /**
+     * Initializes frame for a given timestamp.
+     *
+     * @param rtpTimestamp
+     * @throws Exception
+     */
     private void startFrame(long rtpTimestamp) {
         // Reset error bit
         currentFrameHasError = false;
@@ -255,10 +270,12 @@ public class OriginalRtpMediaExtractor implements RtpSessionDataListener, MediaE
         }
     }
 
+    /**
+     * Sends frame to decoder.
+     */
     private void sendFrame() {
         currentFrame.setSampleSize(currentFrame.getBuffer().position());
         currentFrame.getBuffer().flip();
-
 
         try {
             decoder.decodeFrame(currentFrame);
@@ -270,15 +287,13 @@ public class OriginalRtpMediaExtractor implements RtpSessionDataListener, MediaE
         currentFrame = null;
     }
 
-    public boolean isUseByteStreamFormat() {
-        return useByteStreamFormat;
-    }
-
-    public void setUseByteStreamFormat(boolean useByteStreamFormat) {
-        this.useByteStreamFormat = useByteStreamFormat;
-    }
-
-    // Think how to get CSD-0/CSD-1 codec-specific data chunks
+    /**
+     * Retrieves an Android MediaFormat for H.264, 640x480 video codec.
+     * SPS and PPS are hardcoded to the ones used by libstreaming.
+     * TODO: Think how to get CSD-0/CSD-1 codec-specific data chunks
+     *
+     * @return
+     */
     public MediaFormat getMediaFormat() {
         String mimeType = "video/avc";
         int width = 640;

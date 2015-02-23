@@ -33,41 +33,43 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
- * Created by ashi on 1/13/15.
+ * RTP buffer that avoids jitter.
+ * This one implementation doesn't seem to work properly since it accumulates network delay and
+ * doesn't recover for that.
+ *
+ * @author Ayelen Chavez
  */
 public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
     public static final String DEBUGGING_PROPERTY = "DEBUGGING";
     public static final java.lang.String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW_K";
-    private State streamingState;
-    private long lastTimestamp;
-
-    ConcurrentSkipListMap.Entry<Long, Frame> currentFrameEntry;
-
+    private static boolean DEBUGGING = false;
+    private static long SENDING_DELAY = 28;
+    private static int FRAMES = 50;
+    private final RtpMediaExtractor rtpMediaExtractor;
+    private final DataPacketSenderThread dataPacketSenderThread;
+    ConcurrentSkipListMap.Entry<Long, H264Frame> currentFrameEntry;
     // debugging variables
     int totalFrames = 0;
     int framesSent = 0;
     int totalLoops = 0;
     int tooMuchTimeLoops = 0;
-
-    protected enum State {
-        IDLE,       // Just started. Didn't receive any packets yet
-        WAITING,    // Wait until there are enough frames
-        STREAMING   // Receiving packets
-    }
-
-    private static boolean DEBUGGING = false;
-    private static long SENDING_DELAY = 28;
-    private static int FRAMES = 50;
-
-    private final RtpMediaExtractor rtpMediaExtractor;
-    private final DataPacketSenderThread dataPacketSenderThread;
     // frames sorted by their timestamp
-    ConcurrentSkipListMap<Long, Frame> frames = new ConcurrentSkipListMap<Long, Frame>();
-    private Log log = LogFactory.getLog(RtpMediaBufferWithJitterAvoidance.class);
-
+    ConcurrentSkipListMap<Long, H264Frame> frames = new ConcurrentSkipListMap<Long, H264Frame>();
     RtpSession session;
     RtpParticipantInfo participant;
+    private State streamingState;
+    private long lastTimestamp;
+    private Log log = LogFactory.getLog(RtpMediaBufferWithJitterAvoidance.class);
 
+    /**
+     * Creates a buffer that tries to avoid the network jittering.
+     * It receives packets and creates frames in a thread, maintaining a buffer with the existing
+     * frames ordered by timestamp.
+     * It consumes frames in another thread.
+     *
+     * @param rtpMediaExtractor
+     * @param properties
+     */
     public RtpMediaBufferWithJitterAvoidance(RtpMediaExtractor rtpMediaExtractor, Properties properties) {
 
         this.rtpMediaExtractor = rtpMediaExtractor;
@@ -80,6 +82,15 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
         log.info("Using RtpMediaBufferWithJitterAvoidance with FRAMES = [" + FRAMES + "]");
     }
 
+    /**
+     * When a new data packet arrives, it may be discarded if it is too old or stored in a buffer
+     * to be consumed later by the consumer.
+     * The consumer will be started once the buffer has the expected amount of frames.
+     *
+     * @param session
+     * @param participant
+     * @param packet
+     */
     @Override
     public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
         if (DEBUGGING) {
@@ -102,7 +113,7 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
             return;
         }
 
-        Frame frame = getFrameForPacket(packet);
+        H264Frame frame = getFrameForPacket(packet);
         frames.put(new Long(frame.timestamp()), frame);
 
         // wait to have k frames to start streaming
@@ -113,12 +124,23 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
         }
     }
 
+    /**
+     * @param packet
+     * @return timestamp converted according to libstreaming.
+     */
     private long getConvertedTimestamp(DataPacket packet) {
         return packet.getTimestamp() / 90;
     }
 
-    private Frame getFrameForPacket(DataPacket packet) {
-        Frame frame;
+    /**
+     * Retrieves a frame for the given packet.
+     * If the frame doesn't exist yet, it creates one.
+     *
+     * @param packet
+     * @return
+     */
+    private H264Frame getFrameForPacket(DataPacket packet) {
+        H264Frame frame;
         long timestamp = getConvertedTimestamp(packet);
         if (frames.containsKey(timestamp)) {
             // if a frame with this timestamp already exists, add getPacket to it
@@ -127,12 +149,15 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
             frame.addPacket(packet);
         } else {
             // if no frames with this timestamp exists, create a new one
-            frame = new Frame(new DataPacketWithNalType(packet));
+            frame = new H264Frame(packet);
         }
 
         return frame;
     }
 
+    /**
+     * Shuts-down the consumer's thread.
+     */
     @Override
     public void stop() {
         if (dataPacketSenderThread != null) {
@@ -140,16 +165,26 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
         }
     }
 
+    /**
+     * Consumer thread.
+     * This thread consumes frames waiting a variable delay between frames in order to consume the
+     * next one.
+     */
     private class DataPacketSenderThread extends Thread {
         private boolean running = true;
         private long timeWhenCycleStarted;
         private long delay;
 
+        /**
+         * Creates a consumer loop that sends frames to extractor and delays the loop to send
+         * next frame (trying to do so in a almost constant rate).
+         * Frames are sent to extractor in order and only if they are completed.
+         */
         @Override
         public void run() {
             super.run();
 
-            Frame frame = null;
+            H264Frame frame = null;
 
             while (running) {
                 timeWhenCycleStarted = System.currentTimeMillis();
@@ -185,13 +220,21 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
             }
         }
 
-        private void sendFrame(Frame frame) {
+        /**
+         * When frame is ready, its packets are sent to the extractor.
+         *
+         * @param frame
+         */
+        private void sendFrame(H264Frame frame) {
 
-            for (DataPacketWithNalType packet : frame.getPackets()) {
+            for (H264DataPacket packet : frame.getPackets()) {
                 rtpMediaExtractor.sendPacket(packet);
             }
         }
 
+        /**
+         * Calculates delay needed to be waited in order to send the next frame.
+         */
         private void waitForNextFrame() {
             try {
                 delay = (System.currentTimeMillis() - timeWhenCycleStarted);
@@ -209,6 +252,9 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
             }
         }
 
+        /**
+         * Finishes the consumer's thread loop.
+         */
         public void shutdown() {
             running = false;
         }

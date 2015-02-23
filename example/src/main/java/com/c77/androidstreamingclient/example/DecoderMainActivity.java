@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.view.SurfaceView;
 import android.view.View;
 
-import com.c77.androidstreamingclient.lib.RtpMediaDecoder;
+import com.c77.androidstreamingclient.lib.rtp.RtpMediaDecoder;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -14,8 +14,6 @@ import java.io.OutputStream;
 import java.util.Properties;
 
 public class DecoderMainActivity extends Activity implements View.OnClickListener {
-
-    private static final String TAG = "DecoderMainActivity";
 
     private SurfaceView surfaceView;
     private RtpMediaDecoder rtpMediaDecoder;
@@ -41,7 +39,7 @@ public class DecoderMainActivity extends Activity implements View.OnClickListene
         OutputStream out;
         try {
             out = getApplicationContext().openFileOutput("example.trace", Context.MODE_PRIVATE);
-            rtpMediaDecoder.setTraceOuputStream(out);
+            rtpMediaDecoder.setTraceOutputStream(out);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

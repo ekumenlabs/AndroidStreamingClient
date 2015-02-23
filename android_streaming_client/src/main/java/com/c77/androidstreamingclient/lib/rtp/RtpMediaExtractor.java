@@ -25,8 +25,8 @@ package com.c77.androidstreamingclient.lib.rtp;
 import android.media.MediaFormat;
 
 import com.biasedbit.efflux.packet.DataPacket;
-import com.c77.androidstreamingclient.lib.BufferedSample;
-import com.c77.androidstreamingclient.lib.RtpPlayerException;
+import com.c77.androidstreamingclient.lib.video.BufferedSample;
+import com.c77.androidstreamingclient.lib.exceptions.RtpPlayerException;
 import com.c77.androidstreamingclient.lib.video.Decoder;
 
 import org.apache.commons.logging.Log;
@@ -36,32 +36,38 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import java.nio.ByteBuffer;
 
 /**
- * Created by julian on 12/12/14.
+ * Extractor that knows how to manage RTP packets according to H.264 spec.
+ *
+ * @author Julian Cerruti
  */
 public class RtpMediaExtractor implements MediaExtractor {
-    private static Log log = LogFactory.getLog(RtpMediaExtractor.class);
-
     public static final String CSD_0 = "csd-0";
     public static final String CSD_1 = "csd-1";
     public static final String DURATION_US = "durationUs";
-
-
+    private static Log log = LogFactory.getLog(RtpMediaExtractor.class);
+    private final byte[] byteStreamStartCodePrefix = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01};
+    private final Decoder decoder;
     // Extractor settings
     //   Whether to use Byte Stream Format (H.264 spec., annex B)
     //   (prepends the byte stream 0x00000001 to each NAL unit)
     private boolean useByteStreamFormat = true;
-
-    private final byte[] byteStreamStartCodePrefix = {(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01};
-
-    private final Decoder decoder;
-
     private boolean currentFrameHasError = false;
     private BufferedSample currentFrame;
 
+    /**
+     * Creates the extractor initializing the decoder that will receive the video frames to decode.
+     *
+     * @param decoder
+     */
     public RtpMediaExtractor(Decoder decoder) {
         this.decoder = decoder;
     }
 
+    /**
+     * Creates a STAP-A frame and sends it, as there is no need to wait for other packets.
+     *
+     * @param packet
+     */
     private void startSTAPAFrame(DataPacket packet) {
         // This frame type includes a series of concatenated NAL units, each preceded
         // by a 16-bit size field
@@ -100,6 +106,12 @@ public class RtpMediaExtractor implements MediaExtractor {
         }
     }
 
+    /**
+     * Creates a frame coming from a full packet. That means there is no need to wait for other
+     * packets to send this one because this is complete itself.
+     *
+     * @param packet
+     */
     private void startAndSendFrame(DataPacket packet) {
         try {
             startFrame(packet.getTimestamp());
@@ -116,7 +128,14 @@ public class RtpMediaExtractor implements MediaExtractor {
         }
     }
 
-    private void startAndSendFragmentedFrame(DataPacketWithNalType packet) {
+    /**
+     * Creates a frame formed by several packets. One packet is the start of the frame, that have
+     * some header data, then we get the content and the end packet of the frame indicating the
+     * frame can be sent.
+     *
+     * @param packet
+     */
+    private void startAndSendFragmentedFrame(H264DataPacket packet) {
         // Do we have a clean start of a frame?
         if (packet.isStart()) {
             try {
@@ -139,7 +158,7 @@ public class RtpMediaExtractor implements MediaExtractor {
                     fragmented NAL unit is conveyed in F and NRI fields of the FU
                     indicator octet of the fragmentation unit and in the type field of
                     the FU header"  */
-                byte reconstructedNalTypeOctet = (byte) (packet.fuNalType | packet.nalFBits | packet.nalNriBits);
+                byte reconstructedNalTypeOctet = (byte) (packet.getFuNalType() | packet.getNalFBits() | packet.getNalNriBits());
                 currentFrame.getBuffer().put(reconstructedNalTypeOctet);
             }
         }
@@ -159,6 +178,12 @@ public class RtpMediaExtractor implements MediaExtractor {
         }
     }
 
+    /**
+     * Initializes frame for a given timestamp.
+     *
+     * @param rtpTimestamp
+     * @throws Exception
+     */
     private void startFrame(long rtpTimestamp) throws Exception {
         // Reset error bit
         currentFrameHasError = false;
@@ -185,6 +210,9 @@ public class RtpMediaExtractor implements MediaExtractor {
         }
     }
 
+    /**
+     * Sends frame to decoder.
+     */
     private void sendFrame() {
         currentFrame.setSampleSize(currentFrame.getBuffer().position());
         currentFrame.getBuffer().flip();
@@ -198,15 +226,13 @@ public class RtpMediaExtractor implements MediaExtractor {
         currentFrame = null;
     }
 
-    public boolean isUseByteStreamFormat() {
-        return useByteStreamFormat;
-    }
-
-    public void setUseByteStreamFormat(boolean useByteStreamFormat) {
-        this.useByteStreamFormat = useByteStreamFormat;
-    }
-
-    // Think how to get CSD-0/CSD-1 codec-specific data chunks
+    /**
+     * Retrieves an Android MediaFormat for H.264, 640x480 video codec.
+     * SPS and PPS are hardcoded to the ones used by libstreaming.
+     * TODO: Think how to get CSD-0/CSD-1 codec-specific data chunks
+     *
+     * @return
+     */
     @Override
     public MediaFormat getMediaFormat() {
         String mimeType = "video/avc";
@@ -252,7 +278,12 @@ public class RtpMediaExtractor implements MediaExtractor {
         return format;
     }
 
-    public void sendPacket(DataPacketWithNalType packet) {
+    /**
+     * Creates frames according to its NAL type and sends them.
+     *
+     * @param packet
+     */
+    public void sendPacket(H264DataPacket packet) {
         switch (packet.nalType()) {
             case FULL:
                 startAndSendFrame(packet.getPacket());
