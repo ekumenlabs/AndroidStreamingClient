@@ -37,47 +37,42 @@ import java.util.Properties;
 import java.util.TreeMap;
 
 /**
- * Created by ashi on 1/13/15.
+ * RTP buffer that avoids jitter.
+ * It keeps two threads. One will store the packets that arrive to the client, the other one will
+ * consume them with some wisdom.
+ *
+ * @author Ayelen Chavez
  */
 public class RtpMediaJitterBuffer implements RtpMediaBuffer {
     public static final String DEBUGGING_PROPERTY = "DEBUGGING";
     public static final String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW_TIME";
-
-    private long lastTimestamp;
-
-    private long maxTimeCycleTime = 0;
-    private int counter = 0;
-    private long sumTimeCycleTimes = 0;
-
-    // Jitter buffer variables
-    private long presentationToSystemDifference;    // Used to convert between presentation and system time
-    private long playHeadPresentationTime;                // Current position of the play head. Any packet older
-    // than this time has already been sent down to the extractor and decoder
-
-    // Stream streamingState
-    protected enum State {
-        IDLE,       // Just started. Didn't receive any packets yet
-        CONFIGURING, // looking for frame delay
-        STREAMING   // Receiving packets
-    }
-
-    private State streamingState;
-
     private static boolean DEBUGGING = false;
     private static long SEND_LOOP_WAIT = 20;
     private static long BUFFER_SIZE_MILLISECONDS = 500;
-
     private final RtpSessionDataListener upstream;
-    private RtpSession session;
-    private RtpParticipantInfo participant;
-
     private final DataPacketSenderThread dataPacketSenderThread;
-
+    // than this time has already been sent down to the extractor and decoder
     // packets sorted by presentation time
     TreeMap<Integer, DataPacket> buffer = new TreeMap();
-
+    private long maxTimeCycleTime = 0;
+    private int counter = 0;
+    private long sumTimeCycleTimes = 0;
+    // Jitter buffer variables
+    private long presentationToSystemDifference;    // Used to convert between presentation and system time
+    private long playHeadPresentationTime;                // Current position of the play head. Any packet older
+    private State streamingState;
+    private RtpSession session;
+    private RtpParticipantInfo participant;
     private Log log = LogFactory.getLog(RtpMediaJitterBuffer.class);
 
+    /**
+     * Creates an RTP buffer which work is to avoid network jitter.
+     * It maintains two threads. One that stores frames while packets arrive. The other one
+     * consume the frames.
+     *
+     * @param upstream
+     * @param properties
+     */
     public RtpMediaJitterBuffer(RtpSessionDataListener upstream, Properties properties) {
         this.upstream = upstream;
         streamingState = State.IDLE;
@@ -89,6 +84,15 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
         log.info("Using RtpMediaJitterBuffer with BUFFER_SIZE_MILLISECONDS = [" + BUFFER_SIZE_MILLISECONDS + "]");
     }
 
+    /**
+     * When a new data packet arrives, it may be discarded if it is older than the play head.
+     * If not, it will be stored in a buffer.
+     * It starts the consumer's thread.
+     *
+     * @param session
+     * @param participant
+     * @param packet
+     */
     @Override
     public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
         long systemTimestamp = System.currentTimeMillis();
@@ -121,24 +125,64 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
         }
     }
 
+    /**
+     * Logging method
+     */
     public void logValues() {
         log.info("Average: " + sumTimeCycleTimes / counter);
         log.info("Max delay: " + maxTimeCycleTime);
     }
 
+    /**
+     * Retrieves a timestamp modified to revert libstreaming modifications to timestamps.
+     *
+     * @param packet
+     * @return
+     */
     private long getConvertedTimestamp(DataPacket packet) {
         return packet.getTimestamp() / 90;
     }
 
+    /**
+     * Stops consuming buffer.
+     */
     public void stop() {
         if (dataPacketSenderThread != null) {
             dataPacketSenderThread.shutdown();
         }
     }
 
+    /**
+     * Logs packet information.
+     *
+     * @param value
+     * @return
+     */
+    private String logPacket(DataPacket value) {
+        return " (s#,pt) (" + value.getSequenceNumber() + "/" + value.getTimestamp() + ")";
+    }
+
+    // Stream streamingState
+    protected enum State {
+        IDLE,       // Just started. Didn't receive any packets yet
+        CONFIGURING, // looking for frame delay
+        STREAMING   // Receiving packets
+    }
+
+    /**
+     * Consuming thread.
+     * This thread consumes frames waiting a fixed delay between frames in order to consume.
+     * For every loop, it will consume frames which timestamp between the last play head
+     * presentation time and the current time.
+     */
     private class DataPacketSenderThread extends Thread {
         private boolean running = true;
 
+        /**
+         * Runs the consumer's thread.
+         * It waits a fixed time before consuming. Then calculates which frames should be consumed,
+         * depending on their timestamps and the presentation time of the play head.
+         */
         @Override
         public void run() {
             try {
@@ -180,19 +224,17 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
                             log.error("Exception while sending packet to extractor", t);
                         }
                     }
-
                 }
             } catch (Throwable t) {
                 log.error("Exiting jitter buffer loop due to exception", t);
             }
         }
 
+        /**
+         * Stops the consuming thread.
+         */
         public void shutdown() {
             running = false;
         }
-    }
-
-    private String logPacket(DataPacket value) {
-        return " (s#,pt) (" + value.getSequenceNumber() + "/" + value.getTimestamp() + ")";
     }
 }

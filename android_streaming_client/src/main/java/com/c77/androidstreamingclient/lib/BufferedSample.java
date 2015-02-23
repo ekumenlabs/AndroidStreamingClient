@@ -27,7 +27,9 @@ import org.apache.commons.codec.binary.Hex;
 import java.nio.ByteBuffer;
 
 /**
- * Created by julian on 1/6/15.
+ * Buffer wrapper that keeps timestamp and index of the RTP buffer.
+ *
+ * @author Julian Cerruti
  */
 public class BufferedSample {
     private final ByteBuffer buffer;
@@ -36,40 +38,86 @@ public class BufferedSample {
     private int sampleSize;
     private long rtpTimestamp;
 
+    /**
+     * Constructs a buffered sample given a buffer and an index.
+     *
+     * @param buffer
+     * @param index
+     */
     public BufferedSample(ByteBuffer buffer, int index) {
         this.buffer = buffer;
         this.index = index;
     }
 
+    /**
+     * Retrieves the byte buffer.
+     *
+     * @return
+     */
     public ByteBuffer getBuffer() {
         return buffer;
     }
 
+    /**
+     * Retrieves the index corresponding to this one buffered sample
+     *
+     * @return
+     */
     public int getIndex() {
         return index;
     }
 
+    /**
+     * Retrieves the sample's size
+     *
+     * @return
+     */
     public int getSampleSize() {
         return sampleSize;
     }
 
+    /**
+     * Sets the sample buffer's size
+     *
+     * @param sampleSize
+     */
     public void setSampleSize(int sampleSize) {
         this.sampleSize = sampleSize;
     }
 
+    /**
+     * Retrieves presentation timestamp in microseconds.
+     *
+     * @return
+     */
     public long getPresentationTimeUs() {
         // NOTE: We need to convert from RTP timestamp to sampleTime as expected by MediaCodec
         return rtpTimestamp * 1000L / 90L;
     }
 
-    public void setRtpTimestamp(long rtpTimestamp) {
-        this.rtpTimestamp = rtpTimestamp;
-    }
-
+    /**
+     * Retrieves RTP timestamp
+     *
+     * @return
+     */
     public long getRtpTimestamp() {
         return rtpTimestamp;
     }
 
+    /**
+     * Sets the sample buffer's timestamp
+     *
+     * @param rtpTimestamp
+     */
+    public void setRtpTimestamp(long rtpTimestamp) {
+        this.rtpTimestamp = rtpTimestamp;
+    }
+
+    /**
+     * Retrieves a string with sample buffer's data
+     *
+     * @return
+     */
     @Override
     public String toString() {
         String res = "[";

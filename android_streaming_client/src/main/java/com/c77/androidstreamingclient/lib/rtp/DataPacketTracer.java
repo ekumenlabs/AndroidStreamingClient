@@ -31,15 +31,29 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 
 /**
- * Created by julian on 1/20/15.
+ * Traces packages' data into a file while they arrive.
+ *
+ * @author Julian Cerruti
  */
-public class BufferDelayTracer implements RtpSessionDataListener {
+public class DataPacketTracer implements RtpSessionDataListener {
     private final PrintWriter traceWriter;
 
-    public BufferDelayTracer(OutputStream out) {
+    /**
+     * Creates a tracer initializing the object where packet's data will be written
+     *
+     * @param out
+     */
+    public DataPacketTracer(OutputStream out) {
         traceWriter = new PrintWriter(out);
     }
 
+    /**
+     * Writes packet's data when it arrives
+     *
+     * @param session
+     * @param participant
+     * @param packet
+     */
     @Override
     public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
         traceWriter.write(System.currentTimeMillis() + "," + packet.getSequenceNumber() + "," + packet.getTimestamp() + "\n");

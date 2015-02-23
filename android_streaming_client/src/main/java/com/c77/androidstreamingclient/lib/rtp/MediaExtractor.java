@@ -25,9 +25,18 @@ package com.c77.androidstreamingclient.lib.rtp;
 import android.media.MediaFormat;
 
 /**
- * Created by julian on 1/26/15.
+ * Interface that defines basic behavior of a extractor.
+ *
+ * @author Julian Cerruti
  */
 public interface MediaExtractor {
     // Think how to get CSD-0/CSD-1 codec-specific data chunks
+
+    /**
+     * Returns Android MediaFormat used to properly configure Android API decoder.
+     * It depends on the codec configuration.
+     *
+     * @return Android MediaFormat for a given codec.
+     */
     MediaFormat getMediaFormat();
 }

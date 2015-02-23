@@ -30,39 +30,61 @@ import org.apache.commons.logging.LogFactory;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
- * Created by ashi on 1/20/15.
+ * Frame represented as a set of packets that share the same timestamp and have consecutive
+ * sequence number.
+ *
+ * @author Ayelen Chavez
  */
-public class Frame {
+public class H264Frame {
     private static final boolean DEBUGGING = false;
     private final long timestamp;
     // packets sorted by their sequence number
-    ConcurrentSkipListMap<Integer, DataPacketWithNalType> packets;
-    private Log log = LogFactory.getLog(Frame.class);
+    ConcurrentSkipListMap<Integer, H264DataPacket> packets;
+    private Log log = LogFactory.getLog(H264Frame.class);
 
     /**
-     * Create a frame from a getPacket
+     * Creates a frame from an H.264 packet
      *
      * @param packet
      */
-    public Frame(DataPacketWithNalType packet) {
-        packets = new ConcurrentSkipListMap<Integer, DataPacketWithNalType>();
+    public H264Frame(DataPacket packet) {
+        packets = new ConcurrentSkipListMap<Integer, H264DataPacket>();
         timestamp = packet.getTimestamp();
-        packets.put(new Integer(packet.getSequenceNumber()), packet);
+        packets.put(new Integer(packet.getSequenceNumber()), new H264DataPacket(packet));
     }
 
+    /**
+     * Adds a packet to the frame (this packet shares the timestamp with the frame.
+     *
+     * @param packet to be added to the frame's set of packets.
+     */
     public void addPacket(DataPacket packet) {
-        packets.put(new Integer(packet.getSequenceNumber()), new DataPacketWithNalType(packet));
+        assert packet.getTimestamp() == timestamp : "Packet's timestamp is not equal to the Frame's timestamp";
+        packets.put(new Integer(packet.getSequenceNumber()), new H264DataPacket(packet));
     }
 
-    public java.util.Collection<DataPacketWithNalType> getPackets() {
+    /**
+     * Retrieves the known packets that share the same timestamp forming a frame. This frame may
+     * not be completed.
+     *
+     * @return the H.264 packets that form the frame.
+     */
+    public java.util.Collection<H264DataPacket> getPackets() {
         return packets.values();
     }
 
-    // check whether the frame is completed
+    /**
+     * Check whether the frame is completed or not.
+     * If it contains a FULL or STAP-A packet, it is complete as it only needs that packet in order
+     * to be so. If it is a NOT-FULL frame, it is completed only if there is a start, and end packet
+     * and the ones in the middle.
+     *
+     * @return whether the frame is completed or not.
+     */
     public boolean isCompleted() {
         int startSeqNum = -1;
-        DataPacketWithNalType packet = null;
-        for (ConcurrentSkipListMap.Entry<Integer, DataPacketWithNalType> entry : packets.entrySet()) {
+        H264DataPacket packet = null;
+        for (ConcurrentSkipListMap.Entry<Integer, H264DataPacket> entry : packets.entrySet()) {
             packet = entry.getValue();
             switch (packet.nalType()) {
                 case FULL:
@@ -93,6 +115,9 @@ public class Frame {
         return false;
     }
 
+    /**
+     * @return the frame's timestamp
+     */
     public long timestamp() {
         return timestamp;
     }

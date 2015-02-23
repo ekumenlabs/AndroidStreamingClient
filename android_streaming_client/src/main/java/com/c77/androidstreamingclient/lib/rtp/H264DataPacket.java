@@ -27,9 +27,13 @@ import com.biasedbit.efflux.packet.DataPacket;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
- * Created by ashi on 1/20/15.
+ * DataPacket wrapper that includes knowledge about the NAL type and the interpretation of the
+ * packet's bits in order to know whether is a packet that starts or ends a frame, among other
+ * H.264 specifications.
+ *
+ * @author Ayelen Chavez
  */
-public class DataPacketWithNalType {
+public class H264DataPacket {
     public enum NalType {
         FULL,
         NOT_FULL,
@@ -37,15 +41,23 @@ public class DataPacketWithNalType {
         UNKNOWN
     }
 
+    // actual packet
     private DataPacket packet;
+    // NAL type as defined in the H.264 spec.
     private NalType nalType;
+    // indicates whether this packet is the start of a frame
     private boolean fuStart;
+    // indicates whether this packet is the end of a frame
     private boolean fuEnd;
-    public byte fuNalType;
-    public byte nalFBits;
-    public byte nalNriBits;
+    private byte fuNalType;
+    private byte nalFBits;
+    private byte nalNriBits;
 
-    public DataPacketWithNalType(DataPacket packet) {
+    /**
+     * Creates a H264 packet from a data packet.
+     * @param packet
+     */
+    public H264DataPacket(DataPacket packet) {
         this.packet = packet;
         byte nalUnitOctet = packet.getData().getByte(0);
         byte nalTypeByte = (byte) (nalUnitOctet & 0x1F);
@@ -67,10 +79,17 @@ public class DataPacketWithNalType {
         fuEnd = ((fuHeader & 0x40) != 0);
     }
 
+    /**
+     * @return packet's sequence number.
+     */
     public int getSequenceNumber() {
         return packet.getSequenceNumber();
     }
 
+    /**
+     *
+     * @return packet's timestamp
+     */
     public long getTimestamp() {
         return getConvertedTimestamp(packet);
     }
@@ -80,27 +99,58 @@ public class DataPacketWithNalType {
         return packet.getTimestamp() / 90;
     }
 
+    /**
+     * @return packet's data
+     */
     public ChannelBuffer getData() {
         return packet.getData();
     }
 
+    /**
+     * @return packet's size
+     */
     public int getDataSize() {
         return packet.getDataSize();
     }
 
+    /**
+     * @return packet's NAL type according to H.264 spec.
+     */
     public NalType nalType() {
         return nalType;
     }
 
+    /**
+     * @return the wrapped packet
+     */
     public DataPacket getPacket() {
         return packet;
     }
 
+    /**
+     * Indicates whether the packet is the start of its corresponding frame.
+     * @return true if this packet correspond to the end of its frame
+     */
     public boolean isStart() {
         return fuStart;
     }
 
+    /**
+     * Indicates whether the packet is the end of its corresponding frame.
+     * @return true if this packet correspond to the end of its frame
+     */
     public boolean isEnd() {
         return fuEnd;
+    }
+    public byte getFuNalType() {
+        return fuNalType;
+    }
+
+    public byte getNalFBits() {
+        return nalFBits;
+    }
+
+    public byte getNalNriBits() {
+        return nalNriBits;
     }
 }

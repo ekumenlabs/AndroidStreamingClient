@@ -15,8 +15,6 @@ import java.util.Properties;
 
 public class DecoderMainActivity extends Activity implements View.OnClickListener {
 
-    private static final String TAG = "DecoderMainActivity";
-
     private SurfaceView surfaceView;
     private RtpMediaDecoder rtpMediaDecoder;
 
@@ -41,7 +39,7 @@ public class DecoderMainActivity extends Activity implements View.OnClickListene
         OutputStream out;
         try {
             out = getApplicationContext().openFileOutput("example.trace", Context.MODE_PRIVATE);
-            rtpMediaDecoder.setTraceOuputStream(out);
+            rtpMediaDecoder.setTraceOutputStream(out);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

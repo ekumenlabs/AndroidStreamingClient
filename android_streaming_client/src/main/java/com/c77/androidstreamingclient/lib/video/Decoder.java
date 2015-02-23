@@ -26,12 +26,22 @@ import com.c77.androidstreamingclient.lib.BufferedSample;
 import com.c77.androidstreamingclient.lib.RtpPlayerException;
 
 /**
- * Created by julian on 12/15/14.
+ * @author Julian Cerruti
+ *
+ * The Decoder interface defines the basic behavior expected from a Video Decoder
  */
 public interface Decoder {
-    // Retrieves a buffer from the decoder
+    /**
+     * Retrieves a buffer from the decoder to be filled with data
+     * @return a buffer from the decoder
+     * @throws RtpPlayerException
+     */
     public BufferedSample getSampleBuffer() throws RtpPlayerException;
 
-    // Returns a new frame to be decoded
+    /**
+     * Makes the needed operations to decode a given frame
+     * @param frame a new frame to be decoded
+     * @throws Exception
+     */
     public void decodeFrame(BufferedSample frame) throws Exception;
 }

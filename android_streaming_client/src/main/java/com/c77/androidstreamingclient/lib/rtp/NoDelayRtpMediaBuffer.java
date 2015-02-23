@@ -36,7 +36,10 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Created by julian on 1/7/15.
+ * RTP buffer that sends packets to his partner that processes ordered packets.
+ * A packet will be sent upstream only if it is the one being expected. If it is newer, it will be
+ * stored. If stored packages are too old, they will be discarded.
+ * @author Julian Cerruti
  */
 public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBuffer {
     public static final String CONFIG_TIMEOUT_MS = "NODELAY_TIMEOUT";
@@ -75,6 +78,11 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBu
     private long timestampDifference;   // Keep track of the difference between the packet timestamps
     // and this device's time at the time we received the first packet
 
+    /**
+     * Creates a rtp buffer with a given configuration.
+     * @param upstream object that will receive packets in order
+     * @param configuration if OUT_OF_ORDER_MAX_TIME, its value will replace the default one (1000 ms)
+     */
     public NoDelayRtpMediaBuffer(RtpSessionDataListener upstream, Properties configuration) {
         configuration = (configuration != null) ? configuration : new Properties();
         this.upstream = upstream;
@@ -84,6 +92,13 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBu
         log.info("Using NoDelayRtpMediaBuffer with OUT_OF_ORDER_MAX_TIME = [" + OUT_OF_ORDER_MAX_TIME + "]");
     }
 
+    /**
+     * When a new packet is received, it decides whether to send it to upstream or not.
+     * The sent packets are ordered.
+     * @param session
+     * @param participant
+     * @param packet
+     */
     @Override
     public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
         if (currentState == State.IDLE) {

@@ -30,9 +30,8 @@ import android.view.SurfaceView;
 
 import com.biasedbit.efflux.SsrcListener;
 import com.biasedbit.efflux.participant.RtpParticipant;
-import com.biasedbit.efflux.session.AbstractRtpSession;
 import com.biasedbit.efflux.session.SingleParticipantSession;
-import com.c77.androidstreamingclient.lib.rtp.BufferDelayTracer;
+import com.c77.androidstreamingclient.lib.rtp.DataPacketTracer;
 import com.c77.androidstreamingclient.lib.rtp.MediaExtractor;
 import com.c77.androidstreamingclient.lib.rtp.NoDelayRtpMediaBuffer;
 import com.c77.androidstreamingclient.lib.rtp.OriginalRtpMediaExtractor;
@@ -50,19 +49,26 @@ import java.nio.ByteBuffer;
 import java.util.Properties;
 
 /**
- * Created by ashi on 1/3/15.
+ * Implementation of the decoder that uses Rtp as transport protocol to decode H264 encoded frames.
+ * This object wraps up an Android API decoder and uses it to decode video frames.
+ *
+ * @author Ayelen Chavez
  */
 public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
+
+    // configuration constants
     public static final String DEBUGGING_PROPERTY = "DEBUGGING";
     public static final String CONFIG_USE_NIO = "USE_NIO";
     public static final String CONFIG_BUFFER_TYPE = "BUFFER_TYPE";
     public static final String CONFIG_RECEIVE_BUFFER_SIZE = "RECEIVE_BUFFER_SIZE_BYTES";
 
+    // constant used to activate and deactivate logs
     public static boolean DEBUGGING;
     public String bufferType = "fixed-frame-number";
     public boolean useNio = true;
     public int receiveBufferSize = 50000;
 
+    // surface view where to play video
     private final SurfaceView surfaceView;
 
     private PlayerThread playerThread;
@@ -76,15 +82,28 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     private final Properties configuration;
 
-    // If this stream is set, use it to trace packet arrival times
+    // If this stream is set, use it to trace packet arrival data
     private OutputStream traceOuputStream = null;
 
-    public void setTraceOuputStream(OutputStream out) {
-        traceOuputStream = out;
+    /**
+     * Defines the output stream where to trace packet's data while they arrive to the decoder
+     * @param outputStream stream where to dump data
+     */
+    public void setTraceOutputStream(OutputStream outputStream) {
+        traceOuputStream = outputStream;
     }
 
     /**
-     * @param surfaceView surface where to play video streaming
+     * Creates an RTP decoder indicating where to play the video
+     * @param surfaceView view where video will be displayed
+     */
+    public RtpMediaDecoder(SurfaceView surfaceView) {
+        this(surfaceView, null);
+    }
+
+    /**
+     * Creates an RTP decoder
+     * @param surfaceView view where to play video streaming
      * @param properties  used to configure the debugging variable
      */
     public RtpMediaDecoder(SurfaceView surfaceView, Properties properties) {
@@ -102,6 +121,9 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         surfaceView.getHolder().addCallback(this);
     }
 
+    /**
+     * Starts decoder, including the underlying RTP session
+     */
     public void start() {
         rtpStartClient();
     }
@@ -114,6 +136,9 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         rtpStartClient();
     }
 
+    /**
+     * Stops the underlying RTP session and properly releases the Android API decoder
+     */
     public void release() {
         rtpStopClient();
         if (decoder != null) {
@@ -127,15 +152,27 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         }
     }
 
+    /**
+     * Starts the RTP session
+     */
     private void rtpStartClient() {
         rtpSessionThread = new RTPClientThread();
         rtpSessionThread.start();
     }
 
+    /**
+     * Stops the RTP session
+     */
     private void rtpStopClient() {
         rtpSessionThread.interrupt();
     }
 
+    /**
+     * Retrieves a buffer from the decoder to be filled with data getting it from the Android
+     * decoder input buffers
+     * @return
+     * @throws RtpPlayerException if no such buffer is currently available
+     */
     @Override
     public BufferedSample getSampleBuffer() throws RtpPlayerException {
         int inIndex = decoder.dequeueInputBuffer(-1);
@@ -145,6 +182,11 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         return new BufferedSample(inputBuffers[inIndex], inIndex);
     }
 
+    /**
+     * Decodes a frame
+     * @param decodeBuffer
+     * @throws Exception
+     */
     @Override
     public void decodeFrame(BufferedSample decodeBuffer) throws Exception {
         if (DEBUGGING) {
@@ -161,7 +203,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         switch (outIndex) {
             case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
                 if (DEBUGGING) {
-                    log.info("INFO_OUTPUT_BUFFERS_CHANGED");
+                    log.info("The output buffers have changed.");
                 }
                 outputBuffers = decoder.getOutputBuffers();
                 break;
@@ -172,7 +214,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
                 break;
             case MediaCodec.INFO_TRY_AGAIN_LATER:
                 if (DEBUGGING) {
-                    log.info("dequeueOutputBuffer timed out!");
+                    log.info("Call to dequeueOutputBuffer timed out.");
                 }
                 break;
             default:
@@ -181,16 +223,21 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
                     log.info("We can't use this buffer but render it due to the API limit, " + buffer);
                 }
 
+                // return buffer to the codec
                 decoder.releaseOutputBuffer(outIndex, true);
                 break;
         }
 
         // All decoded frames have been rendered, we can stop playing now
         if (((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) && DEBUGGING) {
-            log.info("OutputBuffer BUFFER_FLAG_END_OF_STREAM");
+            log.info("All decoded frames have been rendered");
         }
     }
 
+    /**
+     * Resizes surface view to 640x480
+     * @param holder
+     */
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         android.view.ViewGroup.LayoutParams layoutParams = surfaceView.getLayoutParams();
@@ -199,6 +246,13 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         surfaceView.setLayoutParams(layoutParams);
     }
 
+    /**
+     * Starts playing video when surface view is ready
+     * @param holder
+     * @param format
+     * @param width
+     * @param height
+     */
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         if (playerThread == null) {
@@ -212,16 +266,23 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     }
 
+    /**
+     * Creates the Android API decoder, configures it and starts it.
+     */
     private class PlayerThread extends Thread {
         private Surface surface;
 
+        /**
+         * Thread constructor.
+         * @param surface where video will be played
+         */
         public PlayerThread(Surface surface) {
             this.surface = surface;
         }
 
         @Override
         public void run() {
-            // Wait a little bit to make sure the RtpClientThread had the opporunity to start
+            // Wait a little bit to make sure the RtpClientThread had the opportunity to start
             // and create the rtpMediaExtractor
             try {
                 sleep(500);
@@ -245,6 +306,12 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
         }
     }
 
+    /**
+     * Thread that creates the underlying RTP session. It also listens to SSRC changes to restart the
+     * decoder accordingly.
+     * Buffer implementation (object that will receive packets while they arrive and handle them
+     * according to an heuristic) is chosen according to a configuration parameter.
+     */
     private class RTPClientThread extends Thread {
         private SingleParticipantSession session;
 
@@ -265,7 +332,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
             // Optionally trace to file
             if (traceOuputStream != null) {
-                session.addDataListener(new BufferDelayTracer(traceOuputStream));
+                session.addDataListener(new DataPacketTracer(traceOuputStream));
             }
 
             // Choose buffer implementation according to configuration

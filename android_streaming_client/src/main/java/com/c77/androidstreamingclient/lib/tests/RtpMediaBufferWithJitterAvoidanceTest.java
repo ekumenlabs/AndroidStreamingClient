@@ -20,12 +20,14 @@
 *
 */
 
-package com.c77.androidstreamingclient.lib.rtp;
+package com.c77.androidstreamingclient.lib.tests;
 
 import com.biasedbit.efflux.packet.DataPacket;
-import com.biasedbit.efflux.participant.RtpParticipantInfo;
-import com.biasedbit.efflux.session.RtpSession;
-import com.biasedbit.efflux.session.RtpSessionDataListener;
+import com.c77.androidstreamingclient.lib.rtp.H264DataPacket;
+import com.c77.androidstreamingclient.lib.rtp.RtpMediaBuffer;
+import com.c77.androidstreamingclient.lib.rtp.RtpMediaBufferWithJitterAvoidance;
+import com.c77.androidstreamingclient.lib.rtp.RtpMediaExtractor;
+import com.c77.androidstreamingclient.lib.video.Decoder;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -34,22 +36,24 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
- * Created by julian on 1/14/15.
+ * RtpMediaBufferWithJitterAvoidance tests
+ *
+ * @author Julian Cerruti
  */
-public class RtpMediaJitterBufferTest {
+public class RtpMediaBufferWithJitterAvoidanceTest {
     // Configured delay time for the buffer
     private static final int DELAY = 200;
     // Amount of time to consider acceptable for the buffer to deliver a packet out of its expected time
     private static final int DELAY_ASSERT_THRESHOLD = 20; // tests will fail until we fix the issue
-    // about the time taken by the consuming loop of the RtpMediaJitterBuffer
+    // about the time taken by the consuming loop of the RtpMediaBufferWithJitterAvoidance
 
     MockMediaExtractor results;
     Properties configuration = new Properties();
-    RtpMediaJitterBuffer test;
+    RtpMediaBuffer test;
     private long timestampDelta;
 
-    public RtpMediaJitterBufferTest() {
-        configuration.setProperty(RtpMediaJitterBuffer.FRAMES_WINDOW_PROPERTY, Integer.toString(DELAY));
+    public RtpMediaBufferWithJitterAvoidanceTest() {
+        configuration.setProperty(RtpMediaBufferWithJitterAvoidance.FRAMES_WINDOW_PROPERTY, Integer.toString(DELAY));
 
         try {
             testInOrder();
@@ -64,9 +68,17 @@ public class RtpMediaJitterBufferTest {
         System.out.println("All tests passed!");
     }
 
+    /**
+     * Poor-man's test entry point
+     * TODO: Replace with JUnit or another more proper test framework
+     */
+    public static void main(String argv[]) {
+        new RtpMediaBufferWithJitterAvoidanceTest();
+    }
+
     private void testDropPacketTooOld() {
-        results = new MockMediaExtractor();
-        test = new RtpMediaJitterBuffer(results, configuration);
+        results = new MockMediaExtractor(null);
+        test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
 
         try {
             // Feed a packet stream in order
@@ -119,8 +131,8 @@ public class RtpMediaJitterBufferTest {
     }
 
     private void testDropMissingPacket() {
-        results = new MockMediaExtractor();
-        test = new RtpMediaJitterBuffer(results, configuration);
+        results = new MockMediaExtractor(null);
+        test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
 
         try {
             // Feed a packet stream in order
@@ -208,8 +220,8 @@ public class RtpMediaJitterBufferTest {
     }
 
     public void testReorder() {
-        results = new MockMediaExtractor();
-        test = new RtpMediaJitterBuffer(results, configuration);
+        results = new MockMediaExtractor(null);
+        test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
 
         try {
             // Feed a packet stream in order
@@ -243,8 +255,8 @@ public class RtpMediaJitterBufferTest {
     }
 
     public void testInOrder() {
-        results = new MockMediaExtractor();
-        test = new RtpMediaJitterBuffer(results, configuration);
+        results = new MockMediaExtractor(null);
+        test = new RtpMediaBufferWithJitterAvoidance(results, configuration);
 
         try {
             // Feed a packet stream in order
@@ -300,6 +312,7 @@ public class RtpMediaJitterBufferTest {
     private DataPacket makePacket(long timestampMilliseconds, int sequenceNumber) {
         DataPacket testpacket = new DataPacket();
         testpacket.setTimestamp(timestampMilliseconds * 90);
+        testpacket.setData(new byte[2]);
         testpacket.setSequenceNumber(sequenceNumber);
         return testpacket;
     }
@@ -307,12 +320,16 @@ public class RtpMediaJitterBufferTest {
     /**
      * Collects packets at the other end of the buffer
      */
-    class MockMediaExtractor implements RtpSessionDataListener {
+    class MockMediaExtractor extends RtpMediaExtractor {
         List<ReceivedPacket> packetList = new ArrayList<ReceivedPacket>();
 
+        public MockMediaExtractor(Decoder decoder) {
+            super(decoder);
+        }
+
         @Override
-        public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
-            packetList.add(new ReceivedPacket(packet, System.currentTimeMillis()));
+        public void sendPacket(H264DataPacket packet) {
+            packetList.add(new ReceivedPacket(packet.getPacket(), System.currentTimeMillis()));
         }
     }
 
@@ -324,13 +341,5 @@ public class RtpMediaJitterBufferTest {
             this.packet = packet;
             this.receivedTimestamp = receivedTimestamp;
         }
-    }
-
-    /**
-     * Poor-man's test entry point
-     * TODO: Replace with JUnit or another more proper test framework
-     */
-    public static void main(String argv[]) {
-        new RtpMediaJitterBufferTest();
     }
 }
