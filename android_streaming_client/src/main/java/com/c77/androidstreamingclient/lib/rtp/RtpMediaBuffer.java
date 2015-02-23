@@ -31,5 +31,11 @@ import com.biasedbit.efflux.session.RtpSessionDataListener;
  * @author Julian Cerruti
  */
 public interface RtpMediaBuffer extends RtpSessionDataListener {
+    enum State {
+        IDLE,       // Just started. Didn't receive any packets yet
+        WAITING,    // Wait until there are enough frames
+        STREAMING   // Receiving packets
+    }
+
     void stop();
 }

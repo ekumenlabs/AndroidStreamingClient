@@ -165,12 +165,6 @@ public class RtpMediaBufferWithJitterAvoidance implements RtpMediaBuffer {
         }
     }
 
-    protected enum State {
-        IDLE,       // Just started. Didn't receive any packets yet
-        WAITING,    // Wait until there are enough frames
-        STREAMING   // Receiving packets
-    }
-
     /**
      * Consumer thread.
      * This thread consumes frames waiting a variable delay between frames in order to consume the

@@ -162,13 +162,6 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
         return " (s#,pt) (" + value.getSequenceNumber() + "/" + value.getTimestamp() + ")";
     }
 
-    // Stream streamingState
-    protected enum State {
-        IDLE,       // Just started. Didn't receive any packets yet
-        CONFIGURING, // looking for frame delay
-        STREAMING   // Receiving packets
-    }
-
     /**
      * Consuming thread.
      * This thread consumes frames waiting a fixed delay between frames in order to consume.
