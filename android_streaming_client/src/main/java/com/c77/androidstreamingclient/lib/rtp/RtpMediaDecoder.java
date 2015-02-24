@@ -31,6 +31,9 @@ import android.view.SurfaceView;
 import com.biasedbit.efflux.SsrcListener;
 import com.biasedbit.efflux.participant.RtpParticipant;
 import com.biasedbit.efflux.session.SingleParticipantSession;
+import com.c77.androidstreamingclient.lib.rtp.buffer.MinDelayRtpMediaBuffer;
+import com.c77.androidstreamingclient.lib.rtp.buffer.RtpMediaBuffer;
+import com.c77.androidstreamingclient.lib.rtp.buffer.TimeWindowRtpMediaBuffer;
 import com.c77.androidstreamingclient.lib.video.BufferedSample;
 import com.c77.androidstreamingclient.lib.exceptions.RtpPlayerException;
 import com.c77.androidstreamingclient.lib.video.Decoder;
@@ -43,7 +46,7 @@ import java.nio.ByteBuffer;
 import java.util.Properties;
 
 /**
- * Implementation of the decoder that uses Rtp as transport protocol to decode H264 encoded frames.
+ * Implementation of the decoder that uses RTP as transport protocol to decode H264 encoded frames.
  * This object wraps up an Android API decoder and uses it to decode video frames.
  *
  * @author Ayelen Chavez
@@ -331,15 +334,14 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
             // Choose buffer implementation according to configuration
             RtpMediaBuffer buffer;
-            if ("fixed-time".equalsIgnoreCase(bufferType)) {
-                rtpMediaExtractor = new OriginalRtpMediaExtractor(RtpMediaDecoder.this);
-                buffer = new RtpMediaJitterBuffer((OriginalRtpMediaExtractor) rtpMediaExtractor, configuration);
-            } else if ("zero-delay".equalsIgnoreCase(bufferType)) {
-                rtpMediaExtractor = new OriginalRtpMediaExtractor(RtpMediaDecoder.this);
-                buffer = new NoDelayRtpMediaBuffer((OriginalRtpMediaExtractor) rtpMediaExtractor, configuration);
-            } else {
+            if ("time-window".equalsIgnoreCase(bufferType)) {
                 rtpMediaExtractor = new RtpMediaExtractor(RtpMediaDecoder.this);
-                buffer = new RtpMediaBufferWithJitterAvoidance((RtpMediaExtractor) rtpMediaExtractor, configuration);
+                buffer = new TimeWindowRtpMediaBuffer((RtpMediaExtractor) rtpMediaExtractor, configuration);
+            } else if ("min-delay".equalsIgnoreCase(bufferType)) {
+                rtpMediaExtractor = new RtpMediaExtractor(RtpMediaDecoder.this);
+                buffer = new MinDelayRtpMediaBuffer((RtpMediaExtractor) rtpMediaExtractor, configuration);
+            } else {
+                throw new RuntimeException("Didn't recognize buffer type configuration: " + CONFIG_BUFFER_TYPE + " = " + bufferType);
             }
             session.addDataListener(buffer);
 

@@ -20,12 +20,13 @@
 *
 */
 
-package com.c77.androidstreamingclient.lib.rtp;
+package com.c77.androidstreamingclient.lib.rtp.buffer;
 
 import com.biasedbit.efflux.packet.DataPacket;
 import com.biasedbit.efflux.participant.RtpParticipantInfo;
 import com.biasedbit.efflux.session.RtpSession;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
+import com.c77.androidstreamingclient.lib.rtp.RtpMediaDecoder;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,12 +36,15 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * RTP buffer that sends packets to his partner that processes ordered packets.
- * A packet will be sent upstream only if it is the one being expected. If it is newer, it will be
- * stored. If stored packages are too old, they will be discarded.
+ * RTP buffer that sends packets upstream for processing immediately as long as they arrive in order.
+ *
+ * Approach: a packet will be sent upstream only if it is the one being expected. If a received packet
+ * is newer than the one being expected, it will be stored in order.
+ * If stored packages are older than the configured threshold, they will be discarded.
+ *
  * @author Julian Cerruti
  */
-public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBuffer {
+public class MinDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBuffer {
     public static final String CONFIG_TIMEOUT_MS = "NODELAY_TIMEOUT";
 
     private long OUT_OF_ORDER_MAX_TIME = 1000; // milliseconds. Wait up to this amount of
@@ -50,7 +54,7 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBu
     // Object that will receive ordered packets
     private final RtpSessionDataListener upstream;
 
-    private static Log log = LogFactory.getLog(NoDelayRtpMediaBuffer.class);
+    private static Log log = LogFactory.getLog(MinDelayRtpMediaBuffer.class);
 
     // Temporary cache map of packets received out of order
     private Map<Integer, DataPacket> packetMap = new HashMap();
@@ -82,13 +86,13 @@ public class NoDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBu
      * @param upstream object that will receive packets in order
      * @param configuration if OUT_OF_ORDER_MAX_TIME, its value will replace the default one (1000 ms)
      */
-    public NoDelayRtpMediaBuffer(RtpSessionDataListener upstream, Properties configuration) {
+    public MinDelayRtpMediaBuffer(RtpSessionDataListener upstream, Properties configuration) {
         configuration = (configuration != null) ? configuration : new Properties();
         this.upstream = upstream;
         currentState = State.IDLE;
 
         OUT_OF_ORDER_MAX_TIME = Long.parseLong(configuration.getProperty(CONFIG_TIMEOUT_MS, Long.toString(OUT_OF_ORDER_MAX_TIME)));
-        log.info("Using NoDelayRtpMediaBuffer with OUT_OF_ORDER_MAX_TIME = [" + OUT_OF_ORDER_MAX_TIME + "]");
+        log.info("Using MinDelayRtpMediaBuffer with OUT_OF_ORDER_MAX_TIME = [" + OUT_OF_ORDER_MAX_TIME + "]");
     }
 
     /**

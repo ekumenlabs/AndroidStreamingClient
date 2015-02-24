@@ -25,6 +25,9 @@ package com.c77.androidstreamingclient.lib.rtp;
 import android.media.MediaFormat;
 
 import com.biasedbit.efflux.packet.DataPacket;
+import com.biasedbit.efflux.participant.RtpParticipantInfo;
+import com.biasedbit.efflux.session.RtpSession;
+import com.biasedbit.efflux.session.RtpSessionDataListener;
 import com.c77.androidstreamingclient.lib.video.BufferedSample;
 import com.c77.androidstreamingclient.lib.exceptions.RtpPlayerException;
 import com.c77.androidstreamingclient.lib.video.Decoder;
@@ -36,11 +39,13 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import java.nio.ByteBuffer;
 
 /**
- * Extractor that knows how to manage RTP packets according to H.264 spec.
+ * RTP Extractor that takes packets, creates frames and sends them to the decoder.
+ * It has all the knowledge to parse H.264 packets, create frames from them and send them according
+ * to the specs.
  *
  * @author Julian Cerruti
  */
-public class RtpMediaExtractor implements MediaExtractor {
+public class RtpMediaExtractor implements RtpSessionDataListener, MediaExtractor {
     public static final String CSD_0 = "csd-0";
     public static final String CSD_1 = "csd-1";
     public static final String DURATION_US = "durationUs";
@@ -51,11 +56,15 @@ public class RtpMediaExtractor implements MediaExtractor {
     //   Whether to use Byte Stream Format (H.264 spec., annex B)
     //   (prepends the byte stream 0x00000001 to each NAL unit)
     private boolean useByteStreamFormat = true;
+    private int lastSequenceNumber = 0;
+    private boolean lastSequenceNumberIsValid = false;
+    private boolean sequenceError = false;
+
     private boolean currentFrameHasError = false;
     private BufferedSample currentFrame;
 
     /**
-     * Creates the extractor initializing the decoder that will receive the video frames to decode.
+     * Creates an RTP extractor that uses a given decoder.
      *
      * @param decoder
      */
@@ -64,118 +73,168 @@ public class RtpMediaExtractor implements MediaExtractor {
     }
 
     /**
-     * Creates a STAP-A frame and sends it, as there is no need to wait for other packets.
+     * Processes every arriving packet parsing its content, creates frames accordingly and sends them.
      *
+     * @param session
+     * @param participant
      * @param packet
      */
-    private void startSTAPAFrame(DataPacket packet) {
-        // This frame type includes a series of concatenated NAL units, each preceded
-        // by a 16-bit size field
+    @Override
+    public void dataPacketReceived(RtpSession session, RtpParticipantInfo participant, DataPacket packet) {
+        String debugging = "RTP data. ";
+        debugging += packet.getDataSize() + "b ";
+        debugging += "#" + packet.getSequenceNumber();
+        debugging += " " + packet.getTimestamp();
 
-        // We'll use the reader index in this parsing routine
-        ChannelBuffer buffer = packet.getData();
-        // Discard the first byte (RTP getPacket type / nalType came from there)
-        try {
-            buffer.readByte();
-        } catch (IndexOutOfBoundsException e) {
-            log.error("jboss AbstractChannelBuffer throws exception when trying to read byte", e);
+        if (lastSequenceNumberIsValid && (lastSequenceNumber + 1) != packet.getSequenceNumber()) {
+            sequenceError = true;
+            debugging += " SKIPPED (" + (packet.getSequenceNumber() - lastSequenceNumber - 1) + ")";
+        } else {
+            sequenceError = false;
         }
 
-        while (buffer.readable()) {
-            // NAL Unit Size
-            short nalUnitSize = buffer.readShort();
+        if (RtpMediaDecoder.DEBUGGING) {
+            log.error(debugging);
+        }
 
-            // NAL Unit Data (of the size read above)
-            byte[] nalUnitData = new byte[nalUnitSize];
-            buffer.readBytes(nalUnitData);
+        // Parsing the RTP Packet - http://www.ietf.org/rfc/rfc3984.txt section 5.3
+        byte nalUnitOctet = packet.getData().getByte(0);
+        byte nalFBits = (byte) (nalUnitOctet & 0x80);
+        byte nalNriBits = (byte) (nalUnitOctet & 0x60);
+        byte nalType = (byte) (nalUnitOctet & 0x1F);
 
-            // Create and send the buffer upstream for processing
-            try {
-                startFrame(packet.getTimestamp());
-            } catch (Exception e) {
-                log.error("Error while trying to start frame", e);
+        // If it's a single NAL packet then the entire payload is here
+        if (nalType > 0 && nalType < 24) {
+            if (RtpMediaDecoder.DEBUGGING) {
+                log.info("NAL: full packet");
             }
+            // Send the buffer upstream for processing
 
+            startFrame(packet.getTimestamp());
             if (currentFrame != null) {
+
                 if (useByteStreamFormat) {
                     currentFrame.getBuffer().put(byteStreamStartCodePrefix);
                 }
-                currentFrame.getBuffer().put(nalUnitData);
+                currentFrame.getBuffer().put(packet.getData().toByteBuffer());
                 sendFrame();
             }
-        }
-    }
-
-    /**
-     * Creates a frame coming from a full packet. That means there is no need to wait for other
-     * packets to send this one because this is complete itself.
-     *
-     * @param packet
-     */
-    private void startAndSendFrame(DataPacket packet) {
-        try {
-            startFrame(packet.getTimestamp());
-        } catch (Exception e) {
-            log.error("Error while trying to start frame", e);
-        }
-        if (currentFrame != null) {
-
-            if (useByteStreamFormat) {
-                currentFrame.getBuffer().put(byteStreamStartCodePrefix);
+            // It's a FU-A unit, we should aggregate packets until done
+        } else if (nalType == 28) {
+            if (RtpMediaDecoder.DEBUGGING) {
+                log.info("NAL: FU-A fragment");
             }
-            currentFrame.getBuffer().put(packet.getData().toByteBuffer());
-            sendFrame();
-        }
-    }
+            byte fuHeader = packet.getData().getByte(1);
 
-    /**
-     * Creates a frame formed by several packets. One packet is the start of the frame, that have
-     * some header data, then we get the content and the end packet of the frame indicating the
-     * frame can be sent.
-     *
-     * @param packet
-     */
-    private void startAndSendFragmentedFrame(H264DataPacket packet) {
-        // Do we have a clean start of a frame?
-        if (packet.isStart()) {
-            try {
+            boolean fuStart = ((fuHeader & 0x80) != 0);
+            boolean fuEnd = ((fuHeader & 0x40) != 0);
+            byte fuNalType = (byte) (fuHeader & 0x1F);
+
+            // Do we have a clean start of a frame?
+            if (fuStart) {
+                if (RtpMediaDecoder.DEBUGGING) {
+                    log.info("FU-A start found. Starting new frame");
+                }
+
                 startFrame(packet.getTimestamp());
-            } catch (Exception e) {
-                log.error("Error while trying to start frame", e);
+
+                if (currentFrame != null) {
+                    // Add stream header
+                    if (useByteStreamFormat) {
+                        currentFrame.getBuffer().put(byteStreamStartCodePrefix);
+                    }
+
+                    // Re-create the H.264 NAL header from the FU-A header
+                    // Excerpt from the spec:
+                /* "The NAL unit type octet of the fragmented
+                   NAL unit is not included as such in the fragmentation unit payload,
+                   but rather the information of the NAL unit type octet of the
+                   fragmented NAL unit is conveyed in F and NRI fields of the FU
+                   indicator octet of the fragmentation unit and in the type field of
+                   the FU header"  */
+                    byte reconstructedNalTypeOctet = (byte) (fuNalType | nalFBits | nalNriBits);
+                    currentFrame.getBuffer().put(reconstructedNalTypeOctet);
+                }
             }
 
+            // if we don't have a buffer here, it means that we skipped the start packet for this
+            // NAL unit, so we can't do anything other than discard everything else
             if (currentFrame != null) {
-                // Add stream header
-                if (useByteStreamFormat) {
-                    currentFrame.getBuffer().put(byteStreamStartCodePrefix);
+
+                // Did we miss packets in the middle of a frame transition?
+                // In that case, I don't think there's much we can do other than flush our buffer
+                // and discard everything until the next buffer
+                if (packet.getTimestamp() != currentFrame.getRtpTimestamp()) {
+                    if (RtpMediaDecoder.DEBUGGING) {
+                        log.warn("Non-consecutive timestamp found");
+                    }
+
+                    currentFrameHasError = true;
+                }
+                if (sequenceError) {
+                    currentFrameHasError = true;
                 }
 
-                // Re-create the H.264 NAL header from the FU-A header
-                // Excerpt from the spec:
-                    /* "The NAL unit type octet of the fragmented
-                    NAL unit is not included as such in the fragmentation unit payload,
-                    but rather the information of the NAL unit type octet of the
-                    fragmented NAL unit is conveyed in F and NRI fields of the FU
-                    indicator octet of the fragmentation unit and in the type field of
-                    the FU header"  */
-                byte reconstructedNalTypeOctet = (byte) (packet.getFuNalType() | packet.getNalFBits() | packet.getNalNriBits());
-                currentFrame.getBuffer().put(reconstructedNalTypeOctet);
+                // If we survived possible errors, collect data to the current frame buffer
+                if (!currentFrameHasError) {
+                    currentFrame.getBuffer().put(packet.getData().toByteBuffer(2, packet.getDataSize() - 2));
+                } else if (RtpMediaDecoder.DEBUGGING) {
+                    log.info("Dropping frame");
+                }
+
+                if (fuEnd) {
+                    if (RtpMediaDecoder.DEBUGGING) {
+                        log.info("FU-A end found. Sending frame!");
+                    }
+                    try {
+                        sendFrame();
+                    } catch (Throwable t) {
+                        log.error("Error sending frame.", t);
+                    }
+                }
             }
-        }
 
-        // if we don't have a buffer here, it means that we skipped the start getPacket for this
-        // NAL unit, so we can't do anything other than discard everything else
-        if (currentFrame != null) {
-            currentFrame.getBuffer().put(packet.getData().toByteBuffer(2, packet.getDataSize() - 2));
+            // STAP-A, used by libstreaming to embed SPS and PPS into the video stream
+        } else if (nalType == 24) {
+            if (RtpMediaDecoder.DEBUGGING) {
+                log.info("NAL: STAP-A");
+            }
+            // This frame type includes a series of concatenated NAL units, each preceded
+            // by a 16-bit size field
 
-            if (packet.isEnd()) {
-                try {
+            // We'll use the reader index in this parsing routine
+            ChannelBuffer buffer = packet.getData();
+            // Discard the first byte (RTP packet type / nalType came from there)
+            buffer.readByte();
+
+            while (buffer.readable()) {
+                // NAL Unit Size
+                short nalUnitSize = buffer.readShort();
+
+                // NAL Unit Data (of the size read above)
+                byte[] nalUnitData = new byte[nalUnitSize];
+                buffer.readBytes(nalUnitData);
+
+                // Create and send the buffer upstream for processing
+                startFrame(packet.getTimestamp());
+
+                if (currentFrame != null) {
+                    if (useByteStreamFormat) {
+                        currentFrame.getBuffer().put(byteStreamStartCodePrefix);
+                    }
+                    currentFrame.getBuffer().put(nalUnitData);
                     sendFrame();
-                } catch (Throwable t) {
-                    log.error("Error sending frame.", t);
                 }
             }
+
+            // libstreaming doesn't use anything else, so we won't implement other NAL unit types, at
+            // least for now
+        } else {
+            log.warn("NAL: Unimplemented unit type: " + nalType);
         }
+
+        lastSequenceNumber = packet.getSequenceNumber();
+        lastSequenceNumberIsValid = true;
     }
 
     /**
@@ -184,7 +243,7 @@ public class RtpMediaExtractor implements MediaExtractor {
      * @param rtpTimestamp
      * @throws Exception
      */
-    private void startFrame(long rtpTimestamp) throws Exception {
+    private void startFrame(long rtpTimestamp) {
         // Reset error bit
         currentFrameHasError = false;
 
@@ -197,6 +256,7 @@ public class RtpMediaExtractor implements MediaExtractor {
                 // Get buffer from decoder
                 currentFrame = decoder.getSampleBuffer();
                 currentFrame.getBuffer().clear();
+
             } catch (RtpPlayerException e) {
                 // TODO: Proper error handling
                 currentFrameHasError = true;
@@ -216,13 +276,14 @@ public class RtpMediaExtractor implements MediaExtractor {
     private void sendFrame() {
         currentFrame.setSampleSize(currentFrame.getBuffer().position());
         currentFrame.getBuffer().flip();
+
         try {
             decoder.decodeFrame(currentFrame);
         } catch (Exception e) {
-            log.error("Error sending frame", e);
+            log.error("Exception sending frame to decoder", e);
         }
 
-        // Always make currentFrameEntry null to indicate we have returned the buffer to the codec
+        // Always make currentFrame null to indicate we have returned the buffer to the codec
         currentFrame = null;
     }
 
@@ -233,7 +294,6 @@ public class RtpMediaExtractor implements MediaExtractor {
      *
      * @return
      */
-    @Override
     public MediaFormat getMediaFormat() {
         String mimeType = "video/avc";
         int width = 640;
@@ -276,24 +336,5 @@ public class RtpMediaExtractor implements MediaExtractor {
         format.setInteger(DURATION_US, 12600000);
 
         return format;
-    }
-
-    /**
-     * Creates frames according to its NAL type and sends them.
-     *
-     * @param packet
-     */
-    public void sendPacket(H264DataPacket packet) {
-        switch (packet.nalType()) {
-            case FULL:
-                startAndSendFrame(packet.getPacket());
-                break;
-            case NOT_FULL:
-                startAndSendFragmentedFrame(packet);
-                break;
-            case STAPA:
-                startSTAPAFrame(packet.getPacket());
-                break;
-        }
     }
 }

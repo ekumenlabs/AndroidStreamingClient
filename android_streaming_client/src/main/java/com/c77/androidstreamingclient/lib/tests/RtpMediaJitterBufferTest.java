@@ -26,7 +26,7 @@ import com.biasedbit.efflux.packet.DataPacket;
 import com.biasedbit.efflux.participant.RtpParticipantInfo;
 import com.biasedbit.efflux.session.RtpSession;
 import com.biasedbit.efflux.session.RtpSessionDataListener;
-import com.c77.androidstreamingclient.lib.rtp.RtpMediaJitterBuffer;
+import com.c77.androidstreamingclient.lib.rtp.buffer.TimeWindowRtpMediaBuffer;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -48,11 +48,11 @@ public class RtpMediaJitterBufferTest {
 
     MockMediaExtractor results;
     Properties configuration = new Properties();
-    RtpMediaJitterBuffer test;
+    TimeWindowRtpMediaBuffer test;
     private long timestampDelta;
 
     public RtpMediaJitterBufferTest() {
-        configuration.setProperty(RtpMediaJitterBuffer.FRAMES_WINDOW_PROPERTY, Integer.toString(DELAY));
+        configuration.setProperty(TimeWindowRtpMediaBuffer.FRAMES_WINDOW_PROPERTY, Integer.toString(DELAY));
 
         try {
             testInOrder();
@@ -77,7 +77,7 @@ public class RtpMediaJitterBufferTest {
 
     private void testDropPacketTooOld() {
         results = new MockMediaExtractor();
-        test = new RtpMediaJitterBuffer(results, configuration);
+        test = new TimeWindowRtpMediaBuffer(results, configuration);
 
         try {
             // Feed a packet stream in order
@@ -131,7 +131,7 @@ public class RtpMediaJitterBufferTest {
 
     private void testDropMissingPacket() {
         results = new MockMediaExtractor();
-        test = new RtpMediaJitterBuffer(results, configuration);
+        test = new TimeWindowRtpMediaBuffer(results, configuration);
 
         try {
             // Feed a packet stream in order
@@ -220,7 +220,7 @@ public class RtpMediaJitterBufferTest {
 
     public void testReorder() {
         results = new MockMediaExtractor();
-        test = new RtpMediaJitterBuffer(results, configuration);
+        test = new TimeWindowRtpMediaBuffer(results, configuration);
 
         try {
             // Feed a packet stream in order
@@ -255,7 +255,7 @@ public class RtpMediaJitterBufferTest {
 
     public void testInOrder() {
         results = new MockMediaExtractor();
-        test = new RtpMediaJitterBuffer(results, configuration);
+        test = new TimeWindowRtpMediaBuffer(results, configuration);
 
         try {
             // Feed a packet stream in order

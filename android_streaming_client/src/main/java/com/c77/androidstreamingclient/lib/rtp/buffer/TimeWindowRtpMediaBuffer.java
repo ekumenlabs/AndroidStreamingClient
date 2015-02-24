@@ -20,7 +20,7 @@
 *
 */
 
-package com.c77.androidstreamingclient.lib.rtp;
+package com.c77.androidstreamingclient.lib.rtp.buffer;
 
 import com.biasedbit.efflux.packet.DataPacket;
 import com.biasedbit.efflux.participant.RtpParticipantInfo;
@@ -37,13 +37,17 @@ import java.util.Properties;
 import java.util.TreeMap;
 
 /**
- * RTP buffer that avoids jitter.
- * It keeps two threads. One will store the packets that arrive to the client, the other one will
+ * RTP buffer that keeps a fixed amount of time from the initially received packet and advances
+ * at a fixed rate, ordering received packets and sending upstream all received packets ordered
+ * and at a fixed rate.
+ *
+ * Approach: It keeps two threads. One will store the packets that arrive to the client, the other one will
  * consume them with some wisdom.
  *
  * @author Ayelen Chavez
+ * @author Julian Cerruti
  */
-public class RtpMediaJitterBuffer implements RtpMediaBuffer {
+public class TimeWindowRtpMediaBuffer implements RtpMediaBuffer {
     public static final String DEBUGGING_PROPERTY = "DEBUGGING";
     public static final String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW_TIME";
     private static boolean DEBUGGING = false;
@@ -63,7 +67,7 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
     private State streamingState;
     private RtpSession session;
     private RtpParticipantInfo participant;
-    private Log log = LogFactory.getLog(RtpMediaJitterBuffer.class);
+    private Log log = LogFactory.getLog(TimeWindowRtpMediaBuffer.class);
 
     /**
      * Creates an RTP buffer which work is to avoid network jitter.
@@ -73,7 +77,7 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
      * @param upstream
      * @param properties
      */
-    public RtpMediaJitterBuffer(RtpSessionDataListener upstream, Properties properties) {
+    public TimeWindowRtpMediaBuffer(RtpSessionDataListener upstream, Properties properties) {
         this.upstream = upstream;
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
@@ -81,7 +85,7 @@ public class RtpMediaJitterBuffer implements RtpMediaBuffer {
         properties = (properties != null) ? properties : new Properties();
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
         BUFFER_SIZE_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "800"));
-        log.info("Using RtpMediaJitterBuffer with BUFFER_SIZE_MILLISECONDS = [" + BUFFER_SIZE_MILLISECONDS + "]");
+        log.info("Using TimeWindowRtpMediaBuffer with BUFFER_SIZE_MILLISECONDS = [" + BUFFER_SIZE_MILLISECONDS + "]");
     }
 
     /**
