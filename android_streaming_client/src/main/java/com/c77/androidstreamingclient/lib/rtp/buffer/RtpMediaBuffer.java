@@ -20,7 +20,7 @@
 *
 */
 
-package com.c77.androidstreamingclient.lib.rtp;
+package com.c77.androidstreamingclient.lib.rtp.buffer;
 
 import com.biasedbit.efflux.session.RtpSessionDataListener;
 
