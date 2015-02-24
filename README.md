@@ -1,7 +1,6 @@
 #Android Streaming Client
 
-About
------
+##About
 
 Android library that receives video streaming and plays it in an Android device<br>
 (particularly in a SurfaceView).<br>
@@ -10,8 +9,7 @@ protocol and decodes H264 encoded video. <br>
 As streaming server, we are using libstreaming library with some modifications <br>
 running in another Android devices.
 
-Content of the project
-----------------------
+##Content of the project
 
 This project contains an Android library which source code is located in the <br>
 folder [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) and an Android module that uses the library. <br>
@@ -26,8 +24,12 @@ The [license_script folder](https://github.com/creativa77/AndroidStreamingClient
 file along with the license text itself.<br>
 You can also find the [LICENSE](https://github.com/creativa77/AndroidStreamingClient/blob/master/LICENCE) and [README](https://github.com/creativa77/AndroidStreamingClient/blob/master/README.md) in the root folder of the project.<br>
 
-How to use it
--------------
+###Documentation
+
+You can find the AndroidStreamingClient library documentation in the [doc](https://github.com/creativa77/AndroidStreamingClient/tree/master/android_streaming_client/doc) <br>
+folder located inside the [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) folder.
+
+##How to use it
 
 Android Streaming Client uses a [libstreaming library for Android's fork](https://github.com/ashyonline/libstreaming) <br>
 to stream video. <br>
@@ -82,8 +84,7 @@ Android device (B).
 If everything works, you will be streaming video from one device (A) to another<br>
 (B) in real time.
 
-Code snippet
-------------
+##Code snippet
 
 How to simple use this library in your main activity.
 
@@ -121,8 +122,7 @@ How to simple use this library in your main activity.
    
 ```
 
-Gradle dependency
------------------
+##Gradle dependency
 
 Add the following line at the end of your module's build.gradle file:
 ```
@@ -132,20 +132,17 @@ dependencies {
 ```
 > Version number may change.
 
-Authors
--------
+##Authors
 
 Ayelen Chavez <ashi@creativa77.com.ar>
 
 Julian Cerruti <jcerruti@creativa77.com.ar>
 
-Issues, bugs, feature requests
-------------------------------
+##Issues, bugs, feature requests
 
 [Github issue tracker](https://github.com/creativa77/AndroidStreamingClient/issues/new)
 
-License
--------
+##License
 
 This project uses code from [efflux library](https://github.com/brunodecarvalho/efflux) Copyright 2010 Bruno de Carvalho, <br>
 licensed under the Apache License, Version 2.0.<br>
@@ -174,8 +171,3 @@ Ayelen Chavez ashi@creativa77.com.ar
 Julian Cerruti jcerruti@creativa77.com.ar
 
 ```
-
-Documentation
--------------
-
-Coming soon
