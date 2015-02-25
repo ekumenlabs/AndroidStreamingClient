@@ -31,11 +31,11 @@ import android.view.SurfaceView;
 import com.biasedbit.efflux.SsrcListener;
 import com.biasedbit.efflux.participant.RtpParticipant;
 import com.biasedbit.efflux.session.SingleParticipantSession;
+import com.c77.androidstreamingclient.lib.exceptions.RtpPlayerException;
 import com.c77.androidstreamingclient.lib.rtp.buffer.MinDelayRtpMediaBuffer;
 import com.c77.androidstreamingclient.lib.rtp.buffer.RtpMediaBuffer;
 import com.c77.androidstreamingclient.lib.rtp.buffer.TimeWindowRtpMediaBuffer;
 import com.c77.androidstreamingclient.lib.video.BufferedSample;
-import com.c77.androidstreamingclient.lib.exceptions.RtpPlayerException;
 import com.c77.androidstreamingclient.lib.video.Decoder;
 
 import org.apache.commons.logging.Log;
@@ -61,37 +61,26 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     // constant used to activate and deactivate logs
     public static boolean DEBUGGING;
+    // surface view where to play video
+    private final SurfaceView surfaceView;
+    private final Properties configuration;
     public String bufferType = "fixed-frame-number";
     public boolean useNio = true;
     public int receiveBufferSize = 50000;
-
-    // surface view where to play video
-    private final SurfaceView surfaceView;
-
     private PlayerThread playerThread;
-    private MediaExtractor rtpMediaExtractor;
+    private RtpMediaExtractor rtpMediaExtractor;
     private RTPClientThread rtpSessionThread;
     private ByteBuffer[] inputBuffers;
     private ByteBuffer[] outputBuffers;
     private MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
     private MediaCodec decoder;
     private Log log = LogFactory.getLog(RtpMediaDecoder.class);
-
-    private final Properties configuration;
-
     // If this stream is set, use it to trace packet arrival data
     private OutputStream traceOuputStream = null;
 
     /**
-     * Defines the output stream where to trace packet's data while they arrive to the decoder
-     * @param outputStream stream where to dump data
-     */
-    public void setTraceOutputStream(OutputStream outputStream) {
-        traceOuputStream = outputStream;
-    }
-
-    /**
      * Creates an RTP decoder indicating where to play the video
+     *
      * @param surfaceView view where video will be displayed
      */
     public RtpMediaDecoder(SurfaceView surfaceView) {
@@ -100,6 +89,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     /**
      * Creates an RTP decoder
+     *
      * @param surfaceView view where to play video streaming
      * @param properties  used to configure the debugging variable
      */
@@ -116,6 +106,15 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
         this.surfaceView = surfaceView;
         surfaceView.getHolder().addCallback(this);
+    }
+
+    /**
+     * Defines the output stream where to trace packet's data while they arrive to the decoder
+     *
+     * @param outputStream stream where to dump data
+     */
+    public void setTraceOutputStream(OutputStream outputStream) {
+        traceOuputStream = outputStream;
     }
 
     /**
@@ -167,6 +166,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     /**
      * Retrieves a buffer from the decoder to be filled with data getting it from the Android
      * decoder input buffers
+     *
      * @return
      * @throws com.c77.androidstreamingclient.lib.exceptions.RtpPlayerException if no such buffer is currently available
      */
@@ -181,6 +181,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     /**
      * Decodes a frame
+     *
      * @param decodeBuffer
      * @throws Exception
      */
@@ -233,6 +234,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     /**
      * Resizes surface view to 640x480
+     *
      * @param holder
      */
     @Override
@@ -245,6 +247,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
     /**
      * Starts playing video when surface view is ready
+     *
      * @param holder
      * @param format
      * @param width
@@ -271,6 +274,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
         /**
          * Thread constructor.
+         *
          * @param surface where video will be played
          */
         public PlayerThread(Surface surface) {
@@ -336,10 +340,10 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             RtpMediaBuffer buffer;
             if ("time-window".equalsIgnoreCase(bufferType)) {
                 rtpMediaExtractor = new RtpMediaExtractor(RtpMediaDecoder.this);
-                buffer = new TimeWindowRtpMediaBuffer((RtpMediaExtractor) rtpMediaExtractor, configuration);
+                buffer = new TimeWindowRtpMediaBuffer(rtpMediaExtractor, configuration);
             } else if ("min-delay".equalsIgnoreCase(bufferType)) {
                 rtpMediaExtractor = new RtpMediaExtractor(RtpMediaDecoder.this);
-                buffer = new MinDelayRtpMediaBuffer((RtpMediaExtractor) rtpMediaExtractor, configuration);
+                buffer = new MinDelayRtpMediaBuffer(rtpMediaExtractor, configuration);
             } else {
                 throw new RuntimeException("Didn't recognize buffer type configuration: " + CONFIG_BUFFER_TYPE + " = " + bufferType);
             }

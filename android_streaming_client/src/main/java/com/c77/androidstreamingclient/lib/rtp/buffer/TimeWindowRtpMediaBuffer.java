@@ -40,7 +40,7 @@ import java.util.TreeMap;
  * RTP buffer that keeps a fixed amount of time from the initially received packet and advances
  * at a fixed rate, ordering received packets and sending upstream all received packets ordered
  * and at a fixed rate.
- *
+ * <p/>
  * Approach: It keeps two threads. One will store the packets that arrive to the client, the other one will
  * consume them with some wisdom.
  *
@@ -48,31 +48,39 @@ import java.util.TreeMap;
  * @author Julian Cerruti
  */
 public class TimeWindowRtpMediaBuffer implements RtpMediaBuffer {
-    public static final String DEBUGGING_PROPERTY = "DEBUGGING";
-    public static final String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW_TIME";
+    // properties
+    private static final String DEBUGGING_PROPERTY = "DEBUGGING";
+    private static final String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW_TIME";
+
+    private static final Log log = LogFactory.getLog(TimeWindowRtpMediaBuffer.class);
     private static boolean DEBUGGING = false;
     private static long SEND_LOOP_WAIT = 20;
     private static long BUFFER_SIZE_MILLISECONDS = 500;
+
     private final RtpSessionDataListener upstream;
     private final DataPacketSenderThread dataPacketSenderThread;
-    // than this time has already been sent down to the extractor and decoder
+
     // packets sorted by presentation time
     TreeMap<Integer, DataPacket> buffer = new TreeMap();
     private long maxTimeCycleTime = 0;
     private int counter = 0;
     private long sumTimeCycleTimes = 0;
+
     // Jitter buffer variables
-    private long presentationToSystemDifference;    // Used to convert between presentation and system time
-    private long playHeadPresentationTime;                // Current position of the play head. Any packet older
+    // Used to convert between presentation and system time
+    private long presentationToSystemDifference;
+    // Current position of the play head. Any packet older
+    // than this time has already been sent to upstream.
+    private long playHeadPresentationTime;
+
     private State streamingState;
     private RtpSession session;
     private RtpParticipantInfo participant;
-    private Log log = LogFactory.getLog(TimeWindowRtpMediaBuffer.class);
 
     /**
      * Creates an RTP buffer which work is to avoid network jitter.
      * It maintains two threads. One that stores frames while packets arrive. The other one
-     * consume the frames.
+     * consumes the frames sending them to upstream.
      *
      * @param upstream
      * @param properties
@@ -82,9 +90,10 @@ public class TimeWindowRtpMediaBuffer implements RtpMediaBuffer {
         streamingState = State.IDLE;
         dataPacketSenderThread = new DataPacketSenderThread();
 
+        // load properties
         properties = (properties != null) ? properties : new Properties();
         DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
-        BUFFER_SIZE_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "800"));
+        BUFFER_SIZE_MILLISECONDS = Long.parseLong(properties.getProperty(FRAMES_WINDOW_PROPERTY, "500"));
         log.info("Using TimeWindowRtpMediaBuffer with BUFFER_SIZE_MILLISECONDS = [" + BUFFER_SIZE_MILLISECONDS + "]");
     }
 
@@ -130,14 +139,6 @@ public class TimeWindowRtpMediaBuffer implements RtpMediaBuffer {
     }
 
     /**
-     * Logging method
-     */
-    public void logValues() {
-        log.info("Average: " + sumTimeCycleTimes / counter);
-        log.info("Max delay: " + maxTimeCycleTime);
-    }
-
-    /**
      * Retrieves a timestamp modified to revert libstreaming modifications to timestamps.
      *
      * @param packet
@@ -148,7 +149,7 @@ public class TimeWindowRtpMediaBuffer implements RtpMediaBuffer {
     }
 
     /**
-     * Stops consuming buffer.
+     * Stops the consuming thread.
      */
     public void stop() {
         if (dataPacketSenderThread != null) {
@@ -157,19 +158,9 @@ public class TimeWindowRtpMediaBuffer implements RtpMediaBuffer {
     }
 
     /**
-     * Logs packet information.
-     *
-     * @param value
-     * @return
-     */
-    private String logPacket(DataPacket value) {
-        return " (s#,pt) (" + value.getSequenceNumber() + "/" + value.getTimestamp() + ")";
-    }
-
-    /**
      * Consuming thread.
-     * This thread consumes frames waiting a fixed delay between frames in order to consume.
-     * For every loop, it will consume frames which timestamp between the last play head
+     * This thread consumes frames waiting a fixed delay between frames.
+     * For every running cycle, it will consume frames which timestamp are between the last play head
      * presentation time and the current time.
      */
     private class DataPacketSenderThread extends Thread {
@@ -192,7 +183,6 @@ public class TimeWindowRtpMediaBuffer implements RtpMediaBuffer {
                     playHeadPresentationTime = System.currentTimeMillis() - presentationToSystemDifference - BUFFER_SIZE_MILLISECONDS;
 
                     // Get packets up to the next play head an pass on to the extractor
-                    int dropped = 0;
                     List<DataPacket> packets = new ArrayList<DataPacket>();
                     synchronized (this) {
                         while (true) {
@@ -205,7 +195,6 @@ public class TimeWindowRtpMediaBuffer implements RtpMediaBuffer {
                                 break;
                             } else if (packetPresentationTime < previousPlayHeadPresentationTime) {
                                 log.warn("Dropping packet from buffer. This shouldn't happen");
-                                dropped++;
                             } else {
                                 packets.add(entry.getValue());
                             }
@@ -228,7 +217,7 @@ public class TimeWindowRtpMediaBuffer implements RtpMediaBuffer {
         }
 
         /**
-         * Stops the consuming thread.
+         * Stops the consuming thread's loop.
          */
         public void shutdown() {
             running = false;
