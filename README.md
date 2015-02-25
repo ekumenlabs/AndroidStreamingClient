@@ -2,12 +2,16 @@
 
 ##About
 
-Android library that receives video streaming and plays it in an Android device<br>
-(particularly in a SurfaceView).<br>
+Android Streaming Client is an Android library which main purpose is to play real <br>
+time video in an Android device. <br>
+
 The current version of the code only supports RTP over UDP as the transport <br>
 protocol and decodes H264 encoded video. <br>
-As streaming server, we are using libstreaming library with some modifications <br>
-running in another Android devices.
+It currently only works with video streamed from [libstreaming library](https://github.com/fyhertz/libstreaming) <br>
+running in a separate Android device. We are using a custom version of <br>
+libstreaming which is the original library plus some minimal changes made to <br>
+fix some issues we encountered while we were working on the Android Streaming <br>
+Client library.<br>
 
 ##Content of the project
 
