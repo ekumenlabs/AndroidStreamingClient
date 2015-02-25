@@ -50,7 +50,7 @@ import java.util.TreeMap;
 public class TimeWindowRtpMediaBuffer implements RtpMediaBuffer {
     // properties
     private static final String DEBUGGING_PROPERTY = "DEBUGGING";
-    private static final String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW_TIME";
+    public static final String FRAMES_WINDOW_PROPERTY = "FRAMES_WINDOW_TIME";
 
     private static final Log log = LogFactory.getLog(TimeWindowRtpMediaBuffer.class);
     private static boolean DEBUGGING = false;
