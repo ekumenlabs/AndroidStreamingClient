@@ -37,53 +37,37 @@ import java.util.Properties;
 
 /**
  * RTP buffer that sends packets upstream for processing immediately as long as they arrive in order.
- *
+ * <p/>
  * Approach: a packet will be sent upstream only if it is the one being expected. If a received packet
  * is newer than the one being expected, it will be stored in order.
  * If stored packages are older than the configured threshold, they will be discarded.
  *
  * @author Julian Cerruti
  */
-public class MinDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaBuffer {
+public class MinDelayRtpMediaBuffer implements RtpMediaBuffer {
     public static final String CONFIG_TIMEOUT_MS = "NODELAY_TIMEOUT";
 
-    private long OUT_OF_ORDER_MAX_TIME = 1000; // milliseconds. Wait up to this amount of
-    // time for missing packets to arrive. If we start getting packets newer than this, discard the old
-    // ones and restart
-
+    private static final Log log = LogFactory.getLog(MinDelayRtpMediaBuffer.class);
     // Object that will receive ordered packets
     private final RtpSessionDataListener upstream;
-
-    private static Log log = LogFactory.getLog(MinDelayRtpMediaBuffer.class);
-
+    // milliseconds. Wait up to this amount of time for missing packets to arrive. If we start
+    // getting packets newer than this, discard the old ones and restart
+    private long OUT_OF_ORDER_MAX_TIME = 1000;
     // Temporary cache map of packets received out of order
     private Map<Integer, DataPacket> packetMap = new HashMap();
     private Map<Integer, Long> timestampMap = new HashMap();
-
-    @Override
-    public void stop() {
-
-    }
-
-    // State variables
-    private enum State {
-        IDLE,       // Just started. Didn't receive any packets yet
-        DIRECT,     // No packets out of order pending
-        REORDER,    // There are out of order packets waiting to be processed
-    }
-
-    ;
     private State currentState;
     private int nextExpectedSequenceNumber;
-    private long lastProcessedTimestamp;    // The timestamp of the last packet we were able to successfully
-    // send upstream for processing
-
-    private long timestampDifference;   // Keep track of the difference between the packet timestamps
-    // and this device's time at the time we received the first packet
+    // The timestamp of the last packet we were able to successfully send upstream for processing
+    private long lastProcessedTimestamp;
+    // Keep track of the difference between the packet timestamps and this device's time at the
+    // time we received the first packet
+    private long timestampDifference;
 
     /**
-     * Creates a rtp buffer with a given configuration.
-     * @param upstream object that will receive packets in order
+     * Creates a RTP buffer with a given configuration.
+     *
+     * @param upstream      object that will receive packets in order
      * @param configuration if OUT_OF_ORDER_MAX_TIME, its value will replace the default one (1000 ms)
      */
     public MinDelayRtpMediaBuffer(RtpSessionDataListener upstream, Properties configuration) {
@@ -96,8 +80,17 @@ public class MinDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaB
     }
 
     /**
+     * Does nothing on stop.
+     */
+    @Override
+    public void stop() {
+
+    }
+
+    /**
      * When a new packet is received, it decides whether to send it to upstream or not.
      * The sent packets are ordered.
+     *
      * @param session
      * @param participant
      * @param packet
@@ -170,5 +163,14 @@ public class MinDelayRtpMediaBuffer implements RtpSessionDataListener, RtpMediaB
                 timestampMap.put(packet.getSequenceNumber(), packet.getTimestamp() / 90);
             }
         }
+    }
+
+    /**
+     * State constants.
+     */
+    private enum State {
+        IDLE,       // Just started. Didn't receive any packets yet
+        DIRECT,     // No packets out of order pending
+        REORDER,    // There are out of order packets waiting to be processed
     }
 }

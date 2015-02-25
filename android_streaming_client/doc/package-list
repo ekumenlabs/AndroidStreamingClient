@@ -1,4 +1,5 @@
 com.c77.androidstreamingclient.lib.exceptions
 com.c77.androidstreamingclient.lib.rtp
+com.c77.androidstreamingclient.lib.rtp.buffer
 com.c77.androidstreamingclient.lib.tests
 com.c77.androidstreamingclient.lib.video
