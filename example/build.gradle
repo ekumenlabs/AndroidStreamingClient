@@ -29,7 +29,7 @@ android {
 }
 
 dependencies {
-    compile(project(':android_streaming_client')) {
-        exclude group: 'org.apache.directory.studio'
+    compile('com.creativa77:android_streaming_client:1.0.5') {
+        exclude group: 'org.apache.commons'
     }
 }

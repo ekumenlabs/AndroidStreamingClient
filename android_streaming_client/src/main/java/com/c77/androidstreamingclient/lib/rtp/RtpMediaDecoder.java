@@ -64,7 +64,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     // surface view where to play video
     private final SurfaceView surfaceView;
     private final Properties configuration;
-    public String bufferType = "fixed-frame-number";
+    public String bufferType = "time-window";
     public boolean useNio = true;
     public int receiveBufferSize = 50000;
     private PlayerThread playerThread;
