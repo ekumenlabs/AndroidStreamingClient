@@ -32,7 +32,21 @@ dependencies {
     // compile 'Group:Artifact:Version'
     compile 'org.apache.directory.studio:org.apache.commons.codec:1.6'
     compile 'org.apache.commons:com.springsource.org.apache.commons.logging:1.1.1'
-    compile project(':efflux')
+    compile('com.creativa77:efflux:1.0.1')
+}
+
+task androidJavadocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
+    classifier = 'javadoc'
+    from androidJavadocs.destinationDir
+}
+
+artifacts {
+    archives androidJavadocsJar
 }
 
 apply from: '../maven_push.gradle'
