@@ -50,7 +50,7 @@ In order to test Android Streaming Client library you should follow this steps:
 Keep in mind that, as libstreaming-examples uses libstreaming as a dependency, <br>
 you may want to clone libstreaming inside libstreaming-examples folder.<br>
 
-* Import the examples project in your favorite Android IDE.
+* Import the examples project in your favourite Android IDE.
 
 If using Android Studio, you should import example4 as a module in a project. <br>
 Android Studio will automatically create a build.gradle file for each imported <br>
@@ -125,7 +125,7 @@ This project contains an Android library which source code is located in the <br
 folder [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) and an Android application that uses the library. <br>
 located in the folder [example](AndroidStreamingClient/tree/master/example).<br>
 The [efflux folder](AndroidStreamingClient/tree/master/efflux) includes the efflux library source code. <br><br>
-Since **Android Streaming Client** was creatd using Android Studio, you will find several gradle files <br>
+Since **Android Streaming Client** was created using Android Studio, you will find several gradle files <br>
 that include dependencies, versions, and other project configurations.<br>
 The [license_script folder](https://github.com/creativa77/AndroidStreamingClient/tree/master/license_script) includes a script to apply the license to every java <br>
 file.<br>
