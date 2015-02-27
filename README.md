@@ -13,11 +13,24 @@ The current version of the code only supports RTP over UDP as the transport <br>
 protocol and decodes H264 encoded video. <br>
 It uses [efflux library](https://github.com/brunodecarvalho/efflux) to create an underlying RTP session to listen to <br>
 package arrival. <br>
-It only works with video streamed from [libstreaming library](https://github.com/fyhertz/libstreaming) running in a <br>
-separate Android device. It uses a custom version of libstreaming which is <br>
-composed of the original libstreaming library plus a couple changes that fix <br>
-particular issues encountered while working on the **Android Streaming Client** <br>
-library.<br>
+
+It includes two different approaches to handle the package arrival. 
+</p>
+
+The first one is called *min-delay*. It is an RTP buffer that sends packets <br>
+upstream for processing immediately as long as they arrive in order.<br>
+A packet will be sent upstream only if it is the one being expected. If a <br>
+received packet is newer than the one being expected, it will be stored in order. <br>
+If stored packages are older than the configured threshold, they will be discarded.<br>
+
+</p>
+
+The second approach is called *time-window*. It is an RTP buffer that keeps a fixed <br>
+amount of time from the initially received packet and advances at a fixed rate, <br>
+ordering received packets and sending upstream all received packets ordered <br>
+and at a fixed rate. <br>
+It keeps two threads. One will store the packets that arrive to the client, the <br>
+other one will consume them with some wisdom.
 
 ###Using Android Streaming Client in your application
 
@@ -118,6 +131,14 @@ How to simple use this library in your main activity.
    }
    
 ```
+
+###Disclamer
+
+So far, **Android Streaming Client** was tested with video streamed from 
+[libstreaming library](https://github.com/fyhertz/libstreaming)  running in a separate Android device. It uses a custom <br>
+version of libstreaming which is composed of the original libstreaming library <br>
+plus a couple changes that fix particular issues encountered while working on <br>
+the **Android Streaming Client** library.<br>
 
 ##Content of the project
 
