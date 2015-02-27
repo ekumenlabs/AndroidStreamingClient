@@ -32,9 +32,10 @@ and at a fixed rate. <br>
 It keeps two threads. One will store the packets that arrive to the client, the <br>
 other one will consume them with some wisdom.
 
-###Using Android Streaming Client in your application
+##How to use it
 
-Simply add the following dependency in your module's build.gradle file:
+Add the following dependency in your module's build.gradle file:
+
 ```
 dependencies {
    compile('com.creativa77:android_streaming_client:1.0.5')
@@ -42,74 +43,23 @@ dependencies {
 ```
 > Version number may change.
 
-###A straightforward example
-
-Android Streaming Client uses a [libstreaming's fork](https://github.com/ashyonline/libstreaming) to publish the video. <br>
-There is also a [fork from libstreaming-examples](https://github.com/ashyonline/libstreaming-examples) that adds a fourth example <br>
-to the set of 3 existing examples ([example4 folder](https://github.com/ashyonline/libstreaming-examples/tree/master/example4)). <br>
-In order to test Android Streaming Client library you should follow this steps:
-
-
-* Clone libstreaming-examples fork:
-```
-   > git clone https://github.com/ashyonline/libstreaming-examples
-```
-
-* Clone libstreaming fork:
-```
-   > git clone https://github.com/ashyonline/libstreaming
-```
-
-Keep in mind that, as libstreaming-examples uses libstreaming as a dependency, <br>
-you may want to clone libstreaming inside libstreaming-examples folder.<br>
-
-* Import the examples project in your favourite Android IDE.
-
-If using Android Studio, you should import example4 as a module in a project. <br>
-Android Studio will automatically create a build.gradle file for each imported <br>
-module. Remember to add the libstreaming dependency to those files:<br>
-
-```
-   dependencies {
-      compile project(':libstreaming')
-   }
-```
-
-* Clone **this** repository:
-```
-   > git clone git@github.com:creativa77/AndroidStreamingClient.git
-```
-
-* Import **Android Streaming Client** project.
-
-* Check the IP address of the *player* device and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly. <br>
-
-That way, the publisher (example4) will know where to stream the video.
-
-* Run example4 in the *publisher* Android device.
-
-* Run the module *example* from **Android Streaming Client** in the *player* <br>
-Android device.
-
-If everything works, you will be streaming video from one device to another <br>
-in real time.
-
-##Code snippet
-
-How to simple use this library in your main activity.
+Import the library in your main activity
 
 ```
 
    import com.c77.androidstreamingclient.lib.RtpMediaDecoder;
    
-   ... 
-   
+```
+
+In onCreate method, create a Decoder and start it
+
+```   
    @Override
    protected void onCreate(Bundle savedInstanceState) {
 
       ...
    
-      // create an RtpMediaCodec with the surface view where you want 
+      // create an RtpMediaDecoder with the surface view where you want 
       // the video to be shown
       RtpMediaDecoder rtpMediaDecoder = new RtpMediaDecoder(surfaceView);   
       // start it
@@ -118,6 +68,11 @@ How to simple use this library in your main activity.
       ...
    }
    
+```
+
+Remember to release the Decoder when onStop is called.
+
+```
    @Override
    protected void onStop() {
       
@@ -131,6 +86,79 @@ How to simple use this library in your main activity.
    }
    
 ```
+
+
+##Video Publishers
+
+###Libstreaming
+
+Android Streaming Client can play video streamed by an Android library called <br>
+**libstreaming**. <br>
+
+To give it a try, you can use the repositories used while developing 
+**Android Streaming Client** library. <br>
+
+Follow this steps:
+
+Clone libstreaming-examples fork:
+
+```
+   > git clone https://github.com/ashyonline/libstreaming-examples
+```
+
+</p>
+
+Clone libstreaming our fork inside libstreaming-examples:
+
+```
+   > git clone https://github.com/ashyonline/libstreaming
+```
+
+</p>
+
+Import the examples project in your favourite Android IDE and add the 
+libstreaming dependency to those files:<br>
+
+```
+   dependencies {
+      compile project(':libstreaming')
+   }
+```
+
+</p>
+
+Clone **this** repository:
+
+```
+   > git clone git@github.com:creativa77/AndroidStreamingClient.git
+```
+
+</p>
+
+Import **Android Streaming Client** project.
+
+</p>
+Check the IP address of the *player* device and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly. <br>
+
+That way, the publisher (example4) will know where to stream the video.
+
+</p>
+
+Run example4 in the *publisher* Android device.
+
+</p>
+
+Run the module *example* from **Android Streaming Client** in the *player* <br>
+Android device.
+</p>
+
+If everything works, you will be streaming video from one device to another <br>
+in real time.
+
+##Other video publishers
+
+Be sure to point the video publisher to the device's IP where you are playing <br>
+video.
 
 ###Disclamer
 
