@@ -108,7 +108,7 @@ Clone libstreaming-examples fork:
 
 </p>
 
-Clone libstreaming our fork inside libstreaming-examples:
+Clone libstreaming inside libstreaming-examples's folder:
 
 ```
    > git clone https://github.com/ashyonline/libstreaming
@@ -140,7 +140,7 @@ Import **Android Streaming Client** project.
 </p>
 Check the IP address of the *player* device and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly. <br>
 
-That way, the publisher (example4) will know where to stream the video.
+That way, the publisher will know where to stream the video.
 
 </p>
 
