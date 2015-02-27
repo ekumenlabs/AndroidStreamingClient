@@ -58,6 +58,11 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     public static final String CONFIG_USE_NIO = "USE_NIO";
     public static final String CONFIG_BUFFER_TYPE = "BUFFER_TYPE";
     public static final String CONFIG_RECEIVE_BUFFER_SIZE = "RECEIVE_BUFFER_SIZE_BYTES";
+    public static final int DATA_STREAMING_PORT = 5006;
+    public static final int SURFACE_WIDTH = 640;
+    public static final int SURFACE_HEIGHT = 480;
+    public static final String TRANSPORT_PROTOCOL = "RTP";
+    public static final String VIDEO_CODEC = "H.264";
 
     // constant used to activate and deactivate logs
     public static boolean DEBUGGING;
@@ -76,7 +81,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     private MediaCodec decoder;
     private Log log = LogFactory.getLog(RtpMediaDecoder.class);
     // If this stream is set, use it to trace packet arrival data
-    private OutputStream traceOuputStream = null;
+    private OutputStream traceOutputStream = null;
 
     /**
      * Creates an RTP decoder indicating where to play the video
@@ -92,13 +97,25 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
      *
      * @param surfaceView view where to play video streaming
      * @param properties  used to configure the debugging variable
+     *
+     * The configuration properties includes:
+     *  DEBUGGING: boolean indicating if information should be sent to logcat.
+     *  USE_NIO: boolean indicating how to change the underlying I/O mechanism used by Netty.
+     *      'false' will force the usage of NioDatagramChannelFactory vs. the default (true) which
+     *      uses OioDatagramChannelFactory
+     *  RECEIVE_BUFFER_SIZE_BYTES: number of bytes to configure underlying RTP session.
+     *  BUFFER_TYPE: Has to be one of: 'time-window' or 'min-delay' in order to choose between existing
+     *      buffering approaches.
+     *  NODELAY_TIMEOUT: Maximum delay in milliseconds for the min-delay buffer.
+     *  FRAMES_WINDOW_TIME=1000: Window size in milliseconds for the time-window buffer
+     *
      */
     public RtpMediaDecoder(SurfaceView surfaceView, Properties properties) {
         configuration = (properties != null) ? properties : new Properties();
 
         // Read configuration
-        DEBUGGING = Boolean.parseBoolean(properties.getProperty(DEBUGGING_PROPERTY, "false"));
-        bufferType = properties.getProperty(CONFIG_BUFFER_TYPE, bufferType);
+        DEBUGGING = Boolean.parseBoolean(configuration.getProperty(DEBUGGING_PROPERTY, "false"));
+        bufferType = configuration.getProperty(CONFIG_BUFFER_TYPE, bufferType);
         useNio = Boolean.parseBoolean(configuration.getProperty(CONFIG_USE_NIO, Boolean.toString(useNio)));
         receiveBufferSize = Integer.parseInt(configuration.getProperty(CONFIG_RECEIVE_BUFFER_SIZE, Integer.toString(receiveBufferSize)));
 
@@ -114,7 +131,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
      * @param outputStream stream where to dump data
      */
     public void setTraceOutputStream(OutputStream outputStream) {
-        traceOuputStream = outputStream;
+        traceOutputStream = outputStream;
     }
 
     /**
@@ -240,8 +257,8 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         android.view.ViewGroup.LayoutParams layoutParams = surfaceView.getLayoutParams();
-        layoutParams.width = 640; // required width
-        layoutParams.height = 480; // required height
+        layoutParams.width = SURFACE_WIDTH; // required width
+        layoutParams.height = SURFACE_HEIGHT; // required height
         surfaceView.setLayoutParams(layoutParams);
     }
 
@@ -264,6 +281,26 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
 
+    }
+
+    public String getResolution() {
+        return SURFACE_WIDTH + "x" + SURFACE_HEIGHT;
+    }
+
+    public String getTransportProtocol() {
+        return TRANSPORT_PROTOCOL;
+    }
+
+    public String getVideoCodec() {
+        return VIDEO_CODEC;
+    }
+
+    public int getDataStreamingPort() {
+        return DATA_STREAMING_PORT;
+    }
+
+    public String getBufferType() {
+        return bufferType;
     }
 
     /**
@@ -318,7 +355,7 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
 
         @Override
         public void run() {
-            RtpParticipant participant = RtpParticipant.createReceiver("0.0.0.0", 5006, 5007);
+            RtpParticipant participant = RtpParticipant.createReceiver("0.0.0.0", DATA_STREAMING_PORT, 5007);
             RtpParticipant remoteParticipant = RtpParticipant.createReceiver("10.34.0.10", 4556, 4557);
             session = new SingleParticipantSession("1", 96, participant, remoteParticipant);
             // listen to ssrc changes, in order to be able to auto-magically "reconnect",
@@ -332,8 +369,8 @@ public class RtpMediaDecoder implements Decoder, SurfaceHolder.Callback {
             });
 
             // Optionally trace to file
-            if (traceOuputStream != null) {
-                session.addDataListener(new DataPacketTracer(traceOuputStream));
+            if (traceOutputStream != null) {
+                session.addDataListener(new DataPacketTracer(traceOutputStream));
             }
 
             // Choose buffer implementation according to configuration
