@@ -4,15 +4,15 @@
 
 ###What it does?
 
-**Android Streaming Client** is an Android library which main purpose is to play real <br>
-time video in an Android device. <br>
+**Android Streaming Client** is an Android library which main purpose is to play <br>
+real time video in an Android device. <br>
 
 ###How it does it
 
 The current version of the code only supports RTP over UDP as the transport <br>
 protocol and decodes H264 encoded video. <br>
-It uses [efflux library](https://github.com/brunodecarvalho/efflux) to create an underlying RTP session to listen to <br>
-package arrival. <br>
+It uses [efflux library](https://github.com/brunodecarvalho/efflux) to create an <br>
+underlying RTP session to listen to package arrival. <br>
 
 It includes two different approaches to handle the package arrival. 
 </p>
@@ -116,7 +116,7 @@ Clone libstreaming inside libstreaming-examples's folder:
 
 </p>
 
-Import the examples project in your favourite Android IDE and add the 
+Import the examples project in your favourite Android IDE and add the <br> 
 libstreaming dependency to those files:<br>
 
 ```
@@ -162,11 +162,12 @@ video.
 
 ###Disclamer
 
-So far, **Android Streaming Client** was tested with video streamed from 
-[libstreaming library](https://github.com/fyhertz/libstreaming)  running in a separate Android device. It uses a custom <br>
-version of libstreaming which is composed of the original libstreaming library <br>
-plus a couple changes that fix particular issues encountered while working on <br>
-the **Android Streaming Client** library.<br>
+So far, **Android Streaming Client** was tested with video streamed from <br>
+[libstreaming library](https://github.com/fyhertz/libstreaming) running in a <br> 
+separate Android device. It uses a custom version of libstreaming which is <br>
+composed of the original libstreaming library plus a couple changes that fix <br>
+particular issues encountered while working on the **Android Streaming Client** <br>
+library.<br>
 
 ##Content of the project
 
