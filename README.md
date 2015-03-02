@@ -4,15 +4,15 @@
 
 ###What it does?
 
-**Android Streaming Client** is a library to play real time video in an Android <br>
-device <br>
+**Android Streaming Client** is a library to play real time video in an Android 
+device. <br>
 
 ###How does work
 
-The current version of the code only supports RTP over UDP as the transport <br>
-protocol and only decodes H264 encoded video.  <br>
-**Android Streaming Client** uses [efflux library](https://github.com/brunodecarvalho/efflux) to create an <br>
-underlying RTP session and listen to packages. <br>
+The current version of the code only supports RTP over UDP as the transport 
+protocol and only decodes H264 encoded video. <br>
+**Android Streaming Client** uses [efflux library](https://github.com/brunodecarvalho/efflux) to create an underlying RTP 
+session and listen to packages. <br>
 
 It includes two different approaches to handle the package arrival:
 </p>
@@ -89,8 +89,8 @@ Remember to release the Decoder when onStop is called.
 
 ###Libstreaming
 
-Android Streaming Client can play video streamed by an Android library called <br>
-**libstreaming**. To give it a try, you can use the repositories used while <br> 
+Android Streaming Client can play video streamed by an Android library called 
+**libstreaming**. To give it a try, you can use the repositories used while 
 developing **Android Streaming Client** library. <br>
 
 Follow this steps:
@@ -134,7 +134,8 @@ libstreaming dependency to those files:<br>
 
 </p>
 * Check the IP address of the *player* device and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly, so that the publisher knows where to stream <br>
-the video to. <br>
+the video to. 
+</p>
 
 * Run example4 in the *publisher* Android device.
 
@@ -149,32 +150,32 @@ in real time.
 
 ##Other video publishers
 
-Be sure to point your video *publisher* to the device's IP where you are playing <br>
+Be sure to point your video *publisher* to the device's IP where you are playing 
 video.
 
 ###Disclamer
 
-So far, **Android Streaming Client** was tested with video streamed from <br>
-[libstreaming library](https://github.com/fyhertz/libstreaming) running in a <br> 
-separate Android device. It uses a custom version of libstreaming which is <br>
-composed of the original libstreaming library plus a couple changes that fix <br>
-particular issues encountered while working on the **Android Streaming Client** <br>
+So far, **Android Streaming Client** was tested with video streamed from 
+[libstreaming library](https://github.com/fyhertz/libstreaming) running in a 
+separate Android device. It uses a custom version of libstreaming which is 
+composed of the original libstreaming library plus a couple changes that fix 
+particular issues encountered while working on the **Android Streaming Client** 
 library.<br>
 
 ##Content of the project
 
-This project contains an Android library which source code is located in the <br>
-folder [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) and an Android application that uses the library <br>
-located in the folder [example](AndroidStreamingClient/tree/master/example). The [efflux folder](AndroidStreamingClient/tree/master/efflux) includes the efflux library <br>
+This project contains an Android library which source code is located in the 
+folder [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) and an Android application that uses the library 
+located in the folder [example](AndroidStreamingClient/tree/master/example). The [efflux folder](AndroidStreamingClient/tree/master/efflux) includes the efflux library <
 source code. <br><br>
-Since **Android Streaming Client** was created using Android Studio, you will find <br>
-several gradle files that include dependencies, versions, and other project <br>
-configurations. The [license_script folder](https://github.com/creativa77/AndroidStreamingClient/tree/master/license_script) includes a script to apply the license <br>
-to every java file. You can also find the [LICENSE](https://github.com/creativa77/AndroidStreamingClient/blob/master/LICENCE) and [README](https://github.com/creativa77/AndroidStreamingClient/blob/master/README.md) files.<br>
+Since **Android Streaming Client** was created using Android Studio, you will find 
+several gradle files that include dependencies, versions, and other project 
+configurations. The [license_script folder](https://github.com/creativa77/AndroidStreamingClient/tree/master/license_script) includes a script to apply the license 
+to every java file. You can also find the [LICENSE](https://github.com/creativa77/AndroidStreamingClient/blob/master/LICENCE) and [README](https://github.com/creativa77/AndroidStreamingClient/blob/master/README.md) files.
 
 ##Documentation
 
-**Android Streaming Client** library documentation is located in [doc](https://github.com/creativa77/AndroidStreamingClient/tree/master/android_streaming_client/doc), <br>
+**Android Streaming Client** library documentation is located in [doc](https://github.com/creativa77/AndroidStreamingClient/tree/master/android_streaming_client/doc), 
 inside the [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) folder.
 
 ##Authors
@@ -189,7 +190,7 @@ Julian Cerruti <jcerruti@creativa77.com.ar>
 
 ##Licensing
 
-This project uses code from [efflux library](https://github.com/brunodecarvalho/efflux) Copyright 2010 Bruno de Carvalho, <br>
+This project uses code from [efflux library](https://github.com/brunodecarvalho/efflux) Copyright 2010 Bruno de Carvalho, 
 licensed under the Apache License, Version 2.0.<br>
 Efflux author gave us full approval to use his library. <br>
 
