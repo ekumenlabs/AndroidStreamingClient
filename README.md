@@ -108,7 +108,7 @@ Follow this steps:
 
 </p>
 
-* Import the examples project in your favourite Android IDE and add the <br> 
+* Import the examples project in your favourite Android IDE and add the  
 libstreaming dependency to those files:<br>
 
 ```
@@ -130,20 +130,17 @@ libstreaming dependency to those files:<br>
 * Import **Android Streaming Client** project.
 
 </p>
-* Check the IP address of the *player* device and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly, so that the publisher knows where to stream <br>
-the video to. 
+* Check the IP address of the *player* device and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly, so that the publisher knows where to stream the video to. 
 </p>
 
 * Run example4 in the *publisher* Android device.
 
 </p>
 
-* Run the module *example* from **Android Streaming Client** in the *player* <br>
-Android device.
+* Run the module *example* from **Android Streaming Client** in the *player* Android device.
 </p>
 
-If everything works, you will be streaming video from one device to another <br>
-in real time.
+If everything works, you will be streaming video from one device to another in real time.
 
 ##Other video publishers
 
@@ -188,7 +185,6 @@ Julian Cerruti <jcerruti@creativa77.com.ar>
 ##Licensing
 
 This project uses code from [efflux library](https://github.com/brunodecarvalho/efflux) Copyright 2010 Bruno de Carvalho, 
-licensed under the Apache License, Version 2.0.<br>
-Efflux author gave us full approval to use his library. <br>
+licensed under the Apache License, Version 2.0. Efflux author gave us full approval to use his library. <br>
 
 Android Streaming Client is licensed under the Apache License, Version 2.0.
