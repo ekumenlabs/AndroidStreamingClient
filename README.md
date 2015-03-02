@@ -108,8 +108,11 @@ Follow this steps:
 
 </p>
 
-* Import the examples project in your favourite Android IDE and add the  
-libstreaming dependency to those files:<br>
+* Create an empty Android Studio project.
+
+</p>
+
+* Import [example4](https://github.com/ashyonline/libstreaming-examples/tree/master/example4) project in Android Studio and add the libstreaming dependency to its build.gradle file:<br>
 
 ```
    dependencies {
@@ -127,7 +130,7 @@ libstreaming dependency to those files:<br>
 
 </p>
 
-* Import **Android Streaming Client** project.
+* Import [example](AndroidStreamingClient/tree/master/example) as a module in Android Studio.
 
 </p>
 * Check the IP address of the *player* device and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly, so that the publisher knows where to stream the video to. 
