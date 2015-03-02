@@ -160,7 +160,7 @@ library.<br>
 
 This project contains an Android library which source code is located in the 
 folder [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) and an Android application that uses the library 
-located in the folder [example](AndroidStreamingClient/tree/master/example). The [efflux folder](AndroidStreamingClient/tree/master/efflux) includes the efflux library <
+located in the folder [example](AndroidStreamingClient/tree/master/example). The [efflux folder](AndroidStreamingClient/tree/master/efflux) includes the efflux library
 source code. <br><br>
 Since **Android Streaming Client** was created using Android Studio, you will find 
 several gradle files that include dependencies, versions, and other project 
