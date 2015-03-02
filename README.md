@@ -115,7 +115,7 @@ Follow this steps:
 
 </p>
 
-* Import [example4](https://github.com/ashyonline/libstreaming-examples/tree/master/example4) project in Android Studio and add the libstreaming dependency to its build.gradle file:<br>
+* Import [example4](https://github.com/ashyonline/libstreaming-examples/tree/master/example4) project as a module in Android Studio and add the libstreaming dependency to its build.gradle file:<br>
 
 ```
    dependencies {
@@ -143,7 +143,7 @@ Follow this steps:
 
 </p>
 
-* Run the module *example* from **Android Streaming Client** in the *player* Android device.
+* Run the *example* module from **Android Streaming Client** in the *player* Android device.
 </p>
 
 If everything works, you will be streaming video from one device to another in real time.
