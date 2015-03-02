@@ -1,109 +1,65 @@
 #Android Streaming Client
 
-##About
+##Introduction
 
-Android Streaming Client is an Android library which main purpose is to play real <br>
-time video in an Android device. <br>
+###What it does?
+
+**Android Streaming Client** is an Android library which main purpose is to play <br>
+real time video in an Android device. <br>
+
+###How it does it
 
 The current version of the code only supports RTP over UDP as the transport <br>
 protocol and decodes H264 encoded video. <br>
-It currently only works with video streamed from [libstreaming library](https://github.com/fyhertz/libstreaming) <br>
-running in a separate Android device. We are using a custom version of <br>
-libstreaming which is the original library plus some minimal changes made to <br>
-fix some issues we encountered while we were working on the Android Streaming <br>
-Client library.<br>
+It uses [efflux library](https://github.com/brunodecarvalho/efflux) to create an <br>
+underlying RTP session to listen to package arrival. <br>
 
-##Content of the project
+It includes two different approaches to handle the package arrival. 
+</p>
 
-This project contains an Android library which source code is located in the <br>
-folder [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) and an Android module that uses the library. <br>
-This module is a simple example of how to use the library and it is located in <br>
-the folder [example](AndroidStreamingClient/tree/master/example).<br>
-You may notice there is a folder called [efflux] (AndroidStreamingClient/tree/master/efflux) which is a third party library <br>
-we use to receive RTP data packets from the nework. <br>
-You will also find several gradle files, as this is an Android Studio project <br>
-and for Android Studio users it is nice to have those files to avoid fighting <br>
-with dependencies, versions, and other project configurations.<br>
-The [license_script folder](https://github.com/creativa77/AndroidStreamingClient/tree/master/license_script) includes a script to apply the license to every java <br>
-file along with the license text itself.<br>
-You can also find the [LICENSE](https://github.com/creativa77/AndroidStreamingClient/blob/master/LICENCE) and [README](https://github.com/creativa77/AndroidStreamingClient/blob/master/README.md) in the root folder of the project.<br>
+The first one is called *min-delay*. It is an RTP buffer that sends packets <br>
+upstream for processing immediately as long as they arrive in order.<br>
+A packet will be sent upstream only if it is the one being expected. If a <br>
+received packet is newer than the one being expected, it will be stored in order. <br>
+If stored packages are older than the configured threshold, they will be discarded.<br>
 
-###Documentation
+</p>
 
-You can find the AndroidStreamingClient library documentation in the [doc](https://github.com/creativa77/AndroidStreamingClient/tree/master/android_streaming_client/doc) <br>
-folder located inside the [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) folder.
+The second approach is called *time-window*. It is an RTP buffer that keeps a fixed <br>
+amount of time from the initially received packet and advances at a fixed rate, <br>
+ordering received packets and sending upstream all received packets ordered <br>
+and at a fixed rate. <br>
+It keeps two threads. One will store the packets that arrive to the client, the <br>
+other one will consume them with some wisdom.
 
 ##How to use it
 
-Android Streaming Client uses a [libstreaming library for Android's fork](https://github.com/ashyonline/libstreaming) <br>
-to stream video. <br>
-There is also a [fork from libstreaming-examples](https://github.com/ashyonline/libstreaming-examples) that adds a fourth example <br>
-(look for example4 folder) to the 3 existing ones. <br>
-In order to test Android Streaming Client library you should follow this steps:
+Add the following dependency in your module's build.gradle file:
 
-
-* Clone libstreaming-examples fork:
 ```
-   > git clone https://github.com/ashyonline/libstreaming-examples
+dependencies {
+   compile('com.creativa77:android_streaming_client:1.0.5')
+}
 ```
+> Version number may change.
 
-* Clone libstreaming fork:
-```
-   > git clone https://github.com/ashyonline/libstreaming
-```
-
-Keep in mind that, as libstreaming-examples uses libstreaming as a dependency, <br>
-you may want to clone libstreaming inside libstreaming-examples folder.<br>
-
-* Import the examples project in your favorite Android IDE.
-
-If using Android Studio, you should import each example (example1, example2, <br>
-and so on) as a module inside an already existing project. Android Studio will <br>
-automatically create a build.gradle file for each imported module. Remember to <br>
-add the libstreaming dependency to those files.
-
-Add the following line at the end of the corresponding build.gradle file:
-```
-   dependencies {
-      compile project(':libstreaming')
-   }
-```
-
-* Clone this repository:
-```
-   > git clone git@github.com:creativa77/AndroidStreamingClient.git
-```
-
-* Import Android Streaming Client project in your favorite Android IDE, also.
-
-* Check the ip address of the client device (B) and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly. <br>
-
-That way, the publisher (example4) will know where to stream the video.
-
-* Run example4 in the server Android device (A).
-
-* Run the module example from AndroidStreamingClient repository in the client <br>
-Android device (B).
-
-If everything works, you will be streaming video from one device (A) to another<br>
-(B) in real time.
-
-##Code snippet
-
-How to simple use this library in your main activity.
+Import the library in your main activity
 
 ```
 
    import com.c77.androidstreamingclient.lib.RtpMediaDecoder;
    
-   ... 
-   
+```
+
+In onCreate method, create a Decoder and start it
+
+```   
    @Override
    protected void onCreate(Bundle savedInstanceState) {
 
       ...
    
-      // create an RtpMediaCodec with the surface view where you want 
+      // create an RtpMediaDecoder with the surface view where you want 
       // the video to be shown
       RtpMediaDecoder rtpMediaDecoder = new RtpMediaDecoder(surfaceView);   
       // start it
@@ -112,6 +68,11 @@ How to simple use this library in your main activity.
       ...
    }
    
+```
+
+Remember to release the Decoder when onStop is called.
+
+```
    @Override
    protected void onStop() {
       
@@ -126,15 +87,105 @@ How to simple use this library in your main activity.
    
 ```
 
-##Gradle dependency
 
-Add the following line at the end of your module's build.gradle file:
+##Video Publishers
+
+###Libstreaming
+
+Android Streaming Client can play video streamed by an Android library called <br>
+**libstreaming**. <br>
+
+To give it a try, you can use the repositories used while developing **Android <br>
+Streaming Client** library. <br>
+
+Follow this steps:
+
+Clone libstreaming-examples fork:
+
 ```
-dependencies {
-   compile('com.creativa77:android_streaming_client:1.0.0')
-}
+   > git clone https://github.com/ashyonline/libstreaming-examples
 ```
-> Version number may change.
+
+</p>
+
+Clone libstreaming inside libstreaming-examples's folder:
+
+```
+   > git clone https://github.com/ashyonline/libstreaming
+```
+
+</p>
+
+Import the examples project in your favourite Android IDE and add the <br> 
+libstreaming dependency to those files:<br>
+
+```
+   dependencies {
+      compile project(':libstreaming')
+   }
+```
+
+</p>
+
+Clone **this** repository:
+
+```
+   > git clone git@github.com:creativa77/AndroidStreamingClient.git
+```
+
+</p>
+
+Import **Android Streaming Client** project.
+
+</p>
+Check the IP address of the *player* device and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly. <br>
+
+That way, the publisher will know where to stream the video.
+
+</p>
+
+Run example4 in the *publisher* Android device.
+
+</p>
+
+Run the module *example* from **Android Streaming Client** in the *player* <br>
+Android device.
+</p>
+
+If everything works, you will be streaming video from one device to another <br>
+in real time.
+
+##Other video publishers
+
+Be sure to point your video *publisher* to the device's IP where you are playing <br>
+video.
+
+###Disclamer
+
+So far, **Android Streaming Client** was tested with video streamed from <br>
+[libstreaming library](https://github.com/fyhertz/libstreaming) running in a <br> 
+separate Android device. It uses a custom version of libstreaming which is <br>
+composed of the original libstreaming library plus a couple changes that fix <br>
+particular issues encountered while working on the **Android Streaming Client** <br>
+library.<br>
+
+##Content of the project
+
+This project contains an Android library which source code is located in the <br>
+folder [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) and an Android application that uses the library. <br>
+located in the folder [example](AndroidStreamingClient/tree/master/example).<br>
+The [efflux folder](AndroidStreamingClient/tree/master/efflux) includes the efflux library source code. <br><br>
+Since **Android Streaming Client** was created using Android Studio, you will find <br>
+several gradle files that include dependencies, versions, and other project <br>
+configurations.<br>
+The [license_script folder](https://github.com/creativa77/AndroidStreamingClient/tree/master/license_script) includes a script to apply the license to every java <br>
+file.<br>
+You can also find the [LICENSE](https://github.com/creativa77/AndroidStreamingClient/blob/master/LICENCE) and [README](https://github.com/creativa77/AndroidStreamingClient/blob/master/README.md) files.<br>
+
+##Documentation
+
+**Android Streaming Client** library documentation is located in [doc](https://github.com/creativa77/AndroidStreamingClient/tree/master/android_streaming_client/doc), <br>
+inside the [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) folder.
 
 ##Authors
 
@@ -146,32 +197,10 @@ Julian Cerruti <jcerruti@creativa77.com.ar>
 
 [Github issue tracker](https://github.com/creativa77/AndroidStreamingClient/issues/new)
 
-##License
+##Licensing
 
 This project uses code from [efflux library](https://github.com/brunodecarvalho/efflux) Copyright 2010 Bruno de Carvalho, <br>
 licensed under the Apache License, Version 2.0.<br>
 Efflux author gave us full approval to use his library. <br>
 
 Android Streaming Client is licensed under the Apache License, Version 2.0.
-
-```
-Copyright 2015 Creativa77 SRL
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-Contributors:
-
-Ayelen Chavez ashi@creativa77.com.ar
-Julian Cerruti jcerruti@creativa77.com.ar
-
-```
