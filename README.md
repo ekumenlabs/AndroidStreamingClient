@@ -6,7 +6,7 @@
 
 **Android Streaming Client** is a library to play real time video in an Android device. <br>
 
-###How does work
+###How does it work
 
 The current version of the code only supports RTP over UDP as the transport protocol and only decodes H264 encoded video. <br>
 **Android Streaming Client** uses [efflux library](https://github.com/brunodecarvalho/efflux) to create an underlying RTP session and listen to packages. <br>
