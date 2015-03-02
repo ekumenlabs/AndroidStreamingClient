@@ -157,7 +157,7 @@ in real time.
 
 ##Other video publishers
 
-Be sure to point the video publisher to the device's IP where you are playing <br>
+Be sure to point your video *publisher* to the device's IP where you are playing <br>
 video.
 
 ###Disclamer
