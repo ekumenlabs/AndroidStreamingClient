@@ -29,7 +29,7 @@ them with some wisdom.
 
 ##How do I use it
 
-Add the following dependency in your module's build.gradle file:
+* Add the following dependency in your module's build.gradle file:
 
 ```
 dependencies {
@@ -38,7 +38,7 @@ dependencies {
 ```
 > Version number may change.
 
-Import the library in your main activity
+* Import the library in your main activity
 
 ```
 
@@ -46,7 +46,7 @@ Import the library in your main activity
    
 ```
 
-On onCreate method, create a `Decoder` and start it
+* On onCreate method, create a `Decoder` and start it
 
 ```   
    @Override
@@ -65,7 +65,7 @@ On onCreate method, create a `Decoder` and start it
    
 ```
 
-Remember to release the Decoder when onStop is called.
+* Remember to release the Decoder when onStop is called.
 
 ```
    @Override
