@@ -95,8 +95,8 @@ Remember to release the Decoder when onStop is called.
 Android Streaming Client can play video streamed by an Android library called <br>
 **libstreaming**. <br>
 
-To give it a try, you can use the repositories used while developing 
-**Android Streaming Client** library. <br>
+To give it a try, you can use the repositories used while developing **Android <br>
+Streaming Client** library. <br>
 
 Follow this steps:
 
@@ -175,8 +175,9 @@ This project contains an Android library which source code is located in the <br
 folder [android_streaming_client](AndroidStreamingClient/tree/master/android_streaming_client) and an Android application that uses the library. <br>
 located in the folder [example](AndroidStreamingClient/tree/master/example).<br>
 The [efflux folder](AndroidStreamingClient/tree/master/efflux) includes the efflux library source code. <br><br>
-Since **Android Streaming Client** was created using Android Studio, you will find several gradle files <br>
-that include dependencies, versions, and other project configurations.<br>
+Since **Android Streaming Client** was created using Android Studio, you will find <br>
+several gradle files that include dependencies, versions, and other project <br>
+configurations.<br>
 The [license_script folder](https://github.com/creativa77/AndroidStreamingClient/tree/master/license_script) includes a script to apply the license to every java <br>
 file.<br>
 You can also find the [LICENSE](https://github.com/creativa77/AndroidStreamingClient/blob/master/LICENCE) and [README](https://github.com/creativa77/AndroidStreamingClient/blob/master/README.md) files.<br>
