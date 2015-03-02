@@ -111,6 +111,9 @@ Follow this steps:
 * Create an empty Android Studio project.
 
 </p>
+* Import [libstreaming](https://github.com/ashyonline/libstreaming) library in Android Studio as a module.
+
+</p>
 
 * Import [example4](https://github.com/ashyonline/libstreaming-examples/tree/master/example4) project in Android Studio and add the libstreaming dependency to its build.gradle file:<br>
 
