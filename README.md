@@ -4,30 +4,27 @@
 
 ###What it does?
 
-**Android Streaming Client** is a library to play real time video in an Android 
-device. <br>
+**Android Streaming Client** is a library to play real time video in an Android device. <br>
 
 ###How does work
 
-The current version of the code only supports RTP over UDP as the transport 
-protocol and only decodes H264 encoded video. <br>
-**Android Streaming Client** uses [efflux library](https://github.com/brunodecarvalho/efflux) to create an underlying RTP 
-session and listen to packages. <br>
+The current version of the code only supports RTP over UDP as the transport protocol and only decodes H264 encoded video. <br>
+**Android Streaming Client** uses [efflux library](https://github.com/brunodecarvalho/efflux) to create an underlying RTP session and listen to packages. <br>
 
 It includes two different approaches to handle the package arrival:
 </p>
 
-* *Min-delay*, which uses an RTP buffer that sends packets upstream for <br>
-processing immediately. Each packet will be sent upstream only if it is the one <br>
-being expected, hence this approach will work as long as the packages arrive in <br>
-order. If a received packet is newer than the one being expected, it will be <br>
-stored in order. Also, If stored packages are older than the configured threshold, <br>
+* *Min-delay*, which uses an RTP buffer that sends packets upstream for 
+processing immediately. Each packet will be sent upstream only if it is the one 
+being expected, hence this approach will work as long as the packages arrive in 
+order. If a received packet is newer than the one being expected, it will be 
+stored in order. Also, If stored packages are older than the configured threshold, 
 they will be discarded.
 </p>
-* *Time-window*, which uses an RTP buffer that keeps packets for a fixed amount <br>
-of time and moves forward at a fixed rate. The received packets are pushed <br>
-upstream in the same order and at a fixed rate. This approach uses two threads, <br>
-one for storing the packets that arrive to the client and another to consume <br>
+* *Time-window*, which uses an RTP buffer that keeps packets for a fixed amount 
+of time and moves forward at a fixed rate. The received packets are pushed 
+upstream in the same order and at a fixed rate. This approach uses two threads, 
+one for storing the packets that arrive to the client and another to consume 
 them with some wisdom.
 
 ##How do I use it
