@@ -33,7 +33,7 @@ them with some wisdom.
 
 ```
 dependencies {
-   compile('com.creativa77:android_streaming_client:1.0.5')
+   compile('com.creativa77:android_streaming_client:1.0.+')
 }
 ```
 > Version number may change.
