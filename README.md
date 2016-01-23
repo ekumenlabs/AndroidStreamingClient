@@ -148,6 +148,25 @@ Follow this steps:
 
 If everything works, you will be streaming video from one device to another in real time.
 
+##FFmpeg
+* Generate a raw h264 file:
+
+```
+   > ffmpeg –i sintel.mp4 –vcodec h264 –s 640*480 –an –f m4v sintel.h264
+```
+
+* Streaming:
+
+```
+   > ffmpeg -re -i sintel.h264 -vcodec copy -f rtp rtp://192.168.0.112:5006
+```
+
+* Notice:
+
+    "192.168.0.112" is android client's ip address.
+
+    "5006" is android client's default port.
+
 ##Other video publishers
 
 Be sure to point your video *publisher* to the device's IP where you are playing 
