@@ -28,7 +28,7 @@ them with some wisdom.
 
 ## How do I use it
 
-* Add the following dependency in your module's build.gradle file:
+ * Add the following dependency in your module's build.gradle file:
 
 ```
 dependencies {
@@ -37,7 +37,7 @@ dependencies {
 ```
 > Version number may change.
 
-* Import the library in your main activity
+ * Import the library in your main activity
 
 ```
 
@@ -45,7 +45,7 @@ dependencies {
    
 ```
 
-* On onCreate method, create a `Decoder` and start it
+ * On onCreate method, create a `Decoder` and start it
 
 ```   
    @Override
@@ -64,7 +64,7 @@ dependencies {
    
 ```
 
-* Remember to release the Decoder when onStop is called.
+ * Remember to release the Decoder when onStop is called.
 
 ```
    @Override
@@ -91,30 +91,23 @@ developing **Android Streaming Client** library. <br>
 
 Follow this steps:
 
-* Clone libstreaming-examples fork:
+ * Clone libstreaming-examples fork:
 
 ```
    > git clone https://github.com/ashyonline/libstreaming-examples
 ```
 
-</p>
-
-* Clone libstreaming inside libstreaming-examples's folder:
+ * Clone libstreaming inside libstreaming-examples's folder:
 
 ```
    > git clone https://github.com/ashyonline/libstreaming
 ```
 
-</p>
+ * Create an empty Android Studio project.
 
-* Create an empty Android Studio project.
+ * Import [libstreaming](https://github.com/ashyonline/libstreaming) library in Android Studio as a module.
 
-</p>
-* Import [libstreaming](https://github.com/ashyonline/libstreaming) library in Android Studio as a module.
-
-</p>
-
-* Import [example4](https://github.com/ashyonline/libstreaming-examples/tree/master/example4) project as a module in Android Studio and add the libstreaming dependency to its build.gradle file:<br>
+ * Import [example4](https://github.com/ashyonline/libstreaming-examples/tree/master/example4) project as a module in Android Studio and add the libstreaming dependency to its build.gradle file:<br>
 
 ```
    dependencies {
@@ -122,45 +115,37 @@ Follow this steps:
    }
 ```
 
-</p>
-
-* Clone **this** repository:
+ * Clone **this** repository:
 
 ```
    > git clone git@github.com:creativa77/AndroidStreamingClient.git
 ```
 
-</p>
+ * Import [example](AndroidStreamingClient/tree/master/example) as a module in Android Studio.
 
-* Import [example](AndroidStreamingClient/tree/master/example) as a module in Android Studio.
+ * Check the IP address of the *player* device and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly, so that the publisher knows where to stream the video to. 
 
-</p>
-* Check the IP address of the *player* device and change [this line](https://github.com/ashyonline/libstreaming-examples/blob/master/example4/src/net/majorkernelpanic/example4/MainActivity.java#L25) accordingly, so that the publisher knows where to stream the video to. 
-</p>
+ * Run example4 in the *publisher* Android device.
 
-* Run example4 in the *publisher* Android device.
-
-</p>
-
-* Run the *example* module from **Android Streaming Client** in the *player* Android device.
-</p>
+ * Run the *example* module from **Android Streaming Client** in the *player* Android device.
 
 If everything works, you will be streaming video from one device to another in real time.
 
 ## FFmpeg
-* Generate a raw h264 file:
+
+ * Generate a raw h264 file:
 
 ```
    > ffmpeg –i sintel.mp4 –vcodec h264 –s 640*480 –an –f m4v sintel.h264
 ```
 
-* Streaming:
+ * Streaming:
 
 ```
    > ffmpeg -re -i sintel.h264 -vcodec copy -f rtp rtp://192.168.0.112:5006
 ```
 
-* Notice:
+ * Notice:
 
     "192.168.0.112" is android client's ip address.
 
@@ -200,7 +185,7 @@ inside the [android_streaming_client](AndroidStreamingClient/tree/master/android
 
 Ayelen Chavez <ashi@creativa77.com.ar>
 
-Julian Cerruti <jcerruti@creativa77.com.ar>
+Julian Cerruti <jcerruti@ekumenlabs.com>
 
 ## Issues, bugs, feature requests
 
