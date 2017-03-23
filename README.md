@@ -26,7 +26,7 @@ upstream in the same order and at a fixed rate. This approach uses two threads,
 one for storing the packets that arrive to the client and another to consume 
 them with some wisdom.
 
-##How do I use it
+## How do I use it
 
 * Add the following dependency in your module's build.gradle file:
 
